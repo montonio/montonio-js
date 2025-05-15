@@ -1,3 +1,0 @@
-/**
- * UMD entry point
- */

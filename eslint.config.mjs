@@ -83,24 +83,4 @@ export default [
             '@typescript-eslint/no-warning-comments': 'off',
         },
     },
-    {
-        // Config for config files at root level (vite.config.ts, etc.)
-        files: ['*.ts'],
-        ignores: ['src/**/*.ts'],
-        languageOptions: {
-            globals: {
-                ...globals.node,
-            },
-            parser: tseslint.parser,
-            parserOptions: {
-                ecmaVersion: 'latest',
-                sourceType: 'module',
-            },
-        },
-        rules: {
-            // Simpler rules for config files
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-unused-vars': 'warn',
-        },
-    },
 ];

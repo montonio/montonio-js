@@ -1,0 +1,23 @@
+<!-- basic html scaffolding -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Montonio Checkout</title>
+</head>
+<body>
+    <h1>Montonio Checkout</h1>
+    <p>Checkout is loading...</p>
+    <div id="montonio-checkout"></div>
+    <script type="module">
+        import { loadMontonioCheckout } from '/src/index.ts';
+
+        const checkout = await loadMontonioCheckout({
+            checkoutSessionUuid: '123',
+            mountTo: '#montonio-checkout',
+            environment: 'production',
+        });        
+    </script>
+    </body>
+</html>
