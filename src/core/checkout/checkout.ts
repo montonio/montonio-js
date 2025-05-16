@@ -1,7 +1,7 @@
 import { CheckoutOptions } from './types';
 
 export class MontonioCheckout {
-    private options: CheckoutOptions;
+    options: CheckoutOptions;
 
     constructor(options: CheckoutOptions) {
         this.options = options;

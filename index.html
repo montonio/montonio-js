@@ -11,11 +11,17 @@
     <script type="module">
         import { loadMontonioCheckout } from '/src/index.ts';
 
-        const checkout = await loadMontonioCheckout({
-            checkoutSessionUuid: '123',
+        const checkout1 = await loadMontonioCheckout({
+            checkoutSessionUuid: 'checkout1',
             mountTo: '#montonio-checkout',
             environment: 'production',
-        });        
+        });
+        
+        const checkout2 = await loadMontonioCheckout({
+            checkoutSessionUuid: 'checkout2',
+            mountTo: '#montonio-checkout',
+            environment: 'production',
+        });
     </script>
     </body>
 </html>
