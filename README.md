@@ -35,9 +35,6 @@ const { loadMontonioCheckout } = window.Montonio;
 
 # Usage
 
-## Importing components
-
-
 ## Embedded Payments and Checkout Sessions
 
 To integrate Montonio's embeddable payment methods to your checkout page, you first need to create a Montonio Checkout Session on your server. Follow the [Montonio Documentation](https://docs.montonio.com/) to create a session. Once you have the session UUID, you can use it to initialize the `MontonioCheckout`component on your front-end.
