@@ -46,7 +46,7 @@ import { loadMontonioCheckout } from '@montonio/montonio-js'; // ES Module usage
 
 const checkoutOptions = {
     checkoutSessionUuid: 'montonio-checkout-session-uuid', // The UUID of the checkout session created on your server
-    mountTo: '#montonio-checkout-container', // The CSS selector of the container where the Montonio Checkout will be rendered
+    mountTo: '#montonio-checkout-container', // The CSS selector string or HTMLElement of the container to mount the Montonio Checkout component
     environment: 'sandbox' // Defaults to 'production'
 }
 

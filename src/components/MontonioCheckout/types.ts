@@ -31,11 +31,17 @@ export interface CheckoutOptions {
 }
 
 /**
- * Checkout session data returned from the API
+ * Checkout session data returned from Stargate
  */
 export interface CheckoutSessionData {
-    /**
-     * The URL to load in the iframe
-     */
     checkoutSessionUrl: string;
+}
+
+/**
+ * Payment result returned to the store after submitting a payment
+ */
+export interface PaymentResult {
+    paymentStatus: string;
+    orderToken: string;
+    returnUrl: string;
 }

@@ -1,4 +1,4 @@
-import { loadMontonioCheckout } from './core';
-import type { CheckoutOptions } from './core/checkout/types';
+import { loadMontonioCheckout } from './components';
+import type { CheckoutOptions } from './components/MontonioCheckout/types';
 
 export { loadMontonioCheckout, CheckoutOptions };
