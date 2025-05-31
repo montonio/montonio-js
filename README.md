@@ -35,9 +35,9 @@ const { loadMontonioCheckout } = window.Montonio;
 
 # Usage
 
-## Embedded Payments and Checkout Sessions
+## Embedded Payments and Sessions
 
-To integrate Montonio's embeddable payment methods to your checkout page, you first need to create a Montonio Checkout Session on your server. Follow the [Montonio Documentation](https://docs.montonio.com/) to create a session. Once you have the session UUID, you can use it to initialize the `MontonioCheckout`component on your front-end.
+To integrate Montonio's embeddable payment methods to your checkout page, you first need to create a Montonio Session on your server. Follow the [Montonio Documentation](https://docs.montonio.com/) to create a session. Once you have the session UUID, you can use it to initialize the `MontonioCheckout`component on your front-end.
 
 ### 1. Initialize MontonioCheckout
 
@@ -45,7 +45,7 @@ To integrate Montonio's embeddable payment methods to your checkout page, you fi
 import { loadMontonioCheckout } from '@montonio/montonio-js'; // ES Module usage. See above for UMD imports
 
 const checkoutOptions = {
-    checkoutSessionUuid: 'montonio-checkout-session-uuid', // The UUID of the checkout session created on your server
+    sessionUuid: 'montonio-session-uuid', // The UUID of the session created on your server
     mountTo: '#montonio-checkout-container', // The CSS selector string or HTMLElement of the container to mount the Montonio Checkout component
     environment: 'sandbox' // Defaults to 'production'
 }
@@ -53,9 +53,9 @@ const checkoutOptions = {
 const montonioCheckout = await loadMontonioCheckout(checkoutOptions);
 ```
 
-To initialize the MontonioCheckout component, the `loadMontonioCheckout` function will talk to the Montonio API to get the checkout session URL, and render the Montonio Checkout iframe in the specified container. The library will also set up a messaging channel to exchange messages between the iframe and the parent window.
+To initialize the MontonioCheckout component, the `loadMontonioCheckout` function will talk to the Montonio API to get the session URL, and render the Montonio Checkout iframe in the specified container. The library will also set up a messaging channel to exchange messages between the iframe and the parent window.
 
-The iframe will emit an event when the contents are fully loaded. The library will then resolve the promise with the `MontonioCheckout` instance, which you can use to interact with the checkout session.
+The iframe will emit an event when the contents are fully loaded. The library will then resolve the promise with the `MontonioCheckout` instance, which you can use to interact with the checkout.
 
 ### 2. Validate the payment form
 
@@ -75,18 +75,15 @@ The `validateOrReject` method will call the `validate` method on the Montonio Ch
 
 ### 3. Create the order and submit the payment
 
-Once the user has clicked the "Pay" button in your checkout and you have validated the form, you can create the order and submit the payment. First, you need to create a Montonio Order on your server. Follow the [Montonio Documentation](https://docs.montonio.com/) to create an order.
+Once the user has clicked the "Pay" button in your checkout and you have validated the form, you can create the order and submit the payment. First, you need to create a Montonio Order on your server. Follow the [Montonio Documentation](https://docs.montonio.com/) to create an order. Make sure you include the session UUID in the order request.
 
-The Montonio API will return a Payment Intent UUID, which you need to use to submit the payment.
+Once the order is created, you can call the `submitPayment` method on the `MontonioCheckout` instance. 
 
-This is done by calling the `submitPayment` method on the `MontonioCheckout` instance. The method takes the Payment Intent UUID as an argument.
+Immediately after the user clicks "Pay" and even before you create the Montonio order, lock your checkout and prevent the user from making any further changes. Show a loading indicator to the user while the order is being created and while the payment is being submitted.
 
 ```javascript
-// From your backend, create the order and pass the Payment Intent UUID to the frontend
-const paymentIntentUuid = 'montonio-payment-intent-uuid';
-
 try {
-    const result = await montonioCheckout.submitPayment(paymentIntentUuid);
+    const result = await montonioCheckout.submitPayment();
     window.location.href = result.returnUrl; // Redirect the user to the thank you page
 } catch (error) {
     // Handle errors

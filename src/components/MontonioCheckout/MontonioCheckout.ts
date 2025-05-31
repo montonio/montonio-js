@@ -1,4 +1,4 @@
-import { CheckoutOptions, CheckoutSessionData } from './types';
+import { CheckoutOptions, SessionData } from './types';
 import { Iframe } from '../Iframe/Iframe';
 import { HTTPService, MessagingService } from '../../services';
 import { getElement } from '../../utils';
@@ -9,7 +9,7 @@ export class MontonioCheckout {
     private messaging: MessagingService;
     private iframe: Iframe | null = null;
     private mountElement: HTMLElement | null = null;
-    private readonly READY_MESSAGE_TYPE = 'montonio:checkoutIframeReady';
+    private readonly READY_MESSAGE_TYPE = 'montonio:checkout.iframe.ready';
 
     constructor(options: CheckoutOptions) {
         this.options = {
@@ -33,11 +33,11 @@ export class MontonioCheckout {
             this.mountElement = getElement(this.options.mountTo);
 
             // Fetch the checkout session
-            const sessionData = await this.fetchCheckoutSession();
+            const sessionData = await this.fetchSession();
 
             // Create and mount the iframe
             this.iframe = new Iframe({
-                src: sessionData.checkoutSessionUrl,
+                src: sessionData.sessionUrl,
                 mountElement: this.mountElement,
                 styles: {
                     width: '100%',
@@ -65,15 +65,15 @@ export class MontonioCheckout {
      * Fetch the checkout session data from the API
      * @returns Promise that resolves with the checkout session data
      */
-    private async fetchCheckoutSession(): Promise<CheckoutSessionData> {
+    private async fetchSession(): Promise<SessionData> {
         const baseUrl =
             this.options.environment === 'sandbox'
                 ? 'https://sandbox-stargate.montonio.com'
                 : 'https://stargate.montonio.com';
 
-        const url = `${baseUrl}/api/checkout-sessions/${this.options.checkoutSessionUuid}`;
+        const url = `${baseUrl}/api/sessions/${this.options.sessionUuid}/gateway-url`;
 
-        return await this.http.get<CheckoutSessionData>(url);
+        return await this.http.get<SessionData>(url);
     }
 
     /**

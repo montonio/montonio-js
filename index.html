@@ -12,13 +12,13 @@
         import { loadMontonioCheckout } from '/src/index.ts';
 
         const checkout1 = await loadMontonioCheckout({
-            checkoutSessionUuid: 'checkout1',
+            sessionUuid: 'session1',
             mountTo: '#montonio-checkout',
             environment: 'production',
         });
         
         const checkout2 = await loadMontonioCheckout({
-            checkoutSessionUuid: 'checkout2',
+            sessionUuid: 'session2',
             mountTo: '#montonio-checkout',
             environment: 'production',
         });

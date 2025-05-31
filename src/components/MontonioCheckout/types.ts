@@ -5,7 +5,7 @@ export interface CheckoutOptions {
     /**
      * The UUID of the checkout session
      */
-    checkoutSessionUuid: string;
+    sessionUuid: string;
 
     /**
      * The element to mount the checkout to
@@ -33,8 +33,8 @@ export interface CheckoutOptions {
 /**
  * Checkout session data returned from Stargate
  */
-export interface CheckoutSessionData {
-    checkoutSessionUrl: string;
+export interface SessionData {
+    sessionUrl: string;
 }
 
 /**
