@@ -6,13 +6,13 @@
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/@montonio"
     },
-    "main": "dist/montonio.mjs",
+    "main": "dist/montonio.es.js",
     "types": "dist/types/index.d.ts",
     "exports": {
         ".": {
             "import": {
                 "types": "./dist/types/index.d.ts",
-                "default": "./dist/montonio.mjs"
+                "default": "./dist/montonio.es.js"
             }
         }
     },
@@ -20,9 +20,10 @@
         "dist"
     ],
     "scripts": {
-        "start": "vite",
+        "start": "vite build --watch",
         "dev": "vite",
         "build": "vite build",
+        "build:watch": "vite build --watch",
         "preview": "vite preview",
         "test": "vitest run",
         "lint": "eslint src"
