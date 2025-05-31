@@ -3,6 +3,9 @@
     "version": "1.0.0",
     "description": "Montonio JS SDK for front-end web applications",
     "type": "module",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/@montonio"
+    },
     "main": "dist/montonio.mjs",
     "types": "dist/types/index.d.ts",
     "exports": {
