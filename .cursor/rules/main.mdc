@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Develop this front-end SDK with the components/services pattern, inspired by Angular
+- Use PascalCase for component and service class names and for the directories and main file names in utils. Acronyms can be upper case
+- For services, the name of the class should end with the "Service" suffix, but the directory and the main TypeScript file should be named with just the plain name. Example (class, directory, file): HTTPService, HTTP, HTTP.ts
+- For components, the name of the directory and the main TypeScript file is the same as the class name and in PascalCase. Example (class, directory, file): Iframe, Iframe, Iframe.ts
+- For utils, use PascalCase for the directory and main file name. Example: (directory, file): DOM, DOM.ts. Utils should generally export reusable functions, not classes.
+- The factory functions for the components are in the src/components/index.ts file. Only components that can be initialized by the end-user have factories. Example factory for the MontonioCheckout component: `export async function loadMontonioCheckout() {}`
+
+- If a task is too ambiguous, ask clarifying questions before making changes
+- Always read the README.md before answering and making changes to understand the point of this library
