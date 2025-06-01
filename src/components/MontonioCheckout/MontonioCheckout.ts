@@ -16,8 +16,8 @@ export class MontonioCheckout {
             environment: 'production', // Set default environment
             ...options,
         };
-        this.http = new HTTPService();
-        this.messaging = new MessagingService();
+        this.http = HTTPService.getInstance();
+        this.messaging = MessagingService.getInstance();
     }
 
     /**

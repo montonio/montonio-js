@@ -1,9 +1,20 @@
 /**
  * HTTP Service for making API requests
  * Handles GET, POST, and PATCH requests with JSON data
+ * Implemented as a singleton
  */
 export class HTTPService {
+    private static instance: HTTPService;
     private readonly timeout = 10000;
+
+    private constructor() {}
+
+    public static getInstance(): HTTPService {
+        if (!HTTPService.instance) {
+            HTTPService.instance = new HTTPService();
+        }
+        return HTTPService.instance;
+    }
 
     public async get<T>(url: string): Promise<T> {
         return this.request<T, never>(url, 'GET');

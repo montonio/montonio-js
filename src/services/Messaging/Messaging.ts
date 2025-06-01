@@ -2,13 +2,22 @@ import { MessageHandler, MessageOptions, MessagePayload } from './types';
 
 /**
  * Messaging service for communication between parent window and iframes
+ * Implemented as a singleton
  */
 export class MessagingService {
+    private static instance: MessagingService;
     private messageHandlers: Map<string, Set<MessageHandler>> = new Map();
     private listenerAttached = false;
 
-    constructor() {
+    private constructor() {
         this.setupMessageListener();
+    }
+
+    public static getInstance(): MessagingService {
+        if (!MessagingService.instance) {
+            MessagingService.instance = new MessagingService();
+        }
+        return MessagingService.instance;
     }
 
     /**
