@@ -1,3 +1,5 @@
+import { Environment } from '../../services/Config/types';
+
 /**
  * Montonio Checkout options
  */
@@ -17,7 +19,7 @@ export interface CheckoutOptions {
      * Environment to use
      * Defaults to 'production'
      */
-    environment?: 'production' | 'sandbox';
+    environment?: Environment;
 
     /**
      * Callback when payment is completed successfully
@@ -33,8 +35,9 @@ export interface CheckoutOptions {
 /**
  * Checkout session data returned from Stargate
  */
-export interface SessionData {
-    sessionUrl: string;
+export interface GatewayUrlResponse {
+    uuid: string;
+    url: string;
 }
 
 /**

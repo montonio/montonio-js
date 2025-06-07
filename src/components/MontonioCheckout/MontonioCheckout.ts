@@ -1,23 +1,24 @@
-import { CheckoutOptions, SessionData } from './types';
+import { CheckoutOptions, GatewayUrlResponse } from './types';
 import { Iframe } from '../Iframe/Iframe';
-import { HTTPService, MessagingService } from '../../services';
+import { ConfigService, HTTPService } from '../../services';
 import { getElement } from '../../utils';
+import { Environment } from '../../services/Config/types';
+import { MessageTypeEnum } from '../../services/Messaging/types';
 
 export class MontonioCheckout {
     private options: CheckoutOptions;
+    private environment: Environment;
     private http: HTTPService;
-    private messaging: MessagingService;
-    private iframe: Iframe | null = null;
+    private config: ConfigService;
+    private iframe!: Iframe;
     private mountElement: HTMLElement | null = null;
-    private readonly READY_MESSAGE_TYPE = 'montonio:checkout.iframe.ready';
+    // private readonly READY_MESSAGE_TYPE = 'montonio:checkout.iframe.ready';
 
     constructor(options: CheckoutOptions) {
-        this.options = {
-            environment: 'production', // Set default environment
-            ...options,
-        };
+        this.options = options;
+        this.environment = options.environment || 'production';
         this.http = HTTPService.getInstance();
-        this.messaging = MessagingService.getInstance();
+        this.config = ConfigService.getInstance();
     }
 
     /**
@@ -29,29 +30,17 @@ export class MontonioCheckout {
      */
     public async initialize(): Promise<this> {
         try {
-            // Get the mount element
-            this.mountElement = getElement(this.options.mountTo);
-
-            // Fetch the checkout session
+            this.mountElement = await getElement(this.options.mountTo);
             const sessionData = await this.fetchSession();
 
-            // Create and mount the iframe
             this.iframe = new Iframe({
-                src: sessionData.sessionUrl,
+                src: sessionData.url,
                 mountElement: this.mountElement,
-                styles: {
-                    width: '100%',
-                    height: '100%',
-                    border: 'none',
-                    overflow: 'hidden',
-                },
             });
 
-            // Mount the iframe
             this.iframe.mount();
 
-            // Wait for the iframe to load and the ready message
-            await Promise.all([this.iframe.waitForLoad(), this.waitForReadyMessage()]);
+            await this.iframe.waitForLoad();
 
             return this;
         } catch (error) {
@@ -62,64 +51,48 @@ export class MontonioCheckout {
     }
 
     /**
-     * Fetch the checkout session data from the API
-     * @returns Promise that resolves with the checkout session data
+     * Fetch the session URL from the API
      */
-    private async fetchSession(): Promise<SessionData> {
-        const baseUrl =
-            this.options.environment === 'sandbox'
-                ? 'https://sandbox-stargate.montonio.com'
-                : 'https://stargate.montonio.com';
+    private async fetchSession(): Promise<GatewayUrlResponse> {
+        const baseUrl = this.config.getConfig('stargateUrl', this.environment);
 
         const url = `${baseUrl}/api/sessions/${this.options.sessionUuid}/gateway-url`;
 
-        return await this.http.get<SessionData>(url);
+        return await this.http.get<GatewayUrlResponse>(url);
     }
 
     /**
      * Wait for the ready message from the iframe
      * @returns Promise that resolves when the ready message is received
      */
-    private waitForReadyMessage(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            // Set a timeout for the ready message
-            const timeoutId = setTimeout(() => {
-                reject(new Error('Timeout waiting for the checkout iframe to be ready'));
-            }, 10000);
+    // private waitForReadyMessage(): Promise<void> {
+    //     return new Promise((resolve, reject) => {
+    //         // Set a timeout for the ready message
+    //         const timeoutId = setTimeout(() => {
+    //             console.error('Timeout waiting for the checkout iframe to be ready');
+    //             resolve();
+    //         }, 10000);
 
-            // Listen for the ready message
-            const cleanup = this.messaging.onMessage(this.READY_MESSAGE_TYPE, () => {
-                clearTimeout(timeoutId);
-                cleanup();
-                resolve();
-            });
-        });
-    }
+    //         // Listen for the ready message
+    //         const cleanup = this.messaging.onMessage(this.READY_MESSAGE_TYPE, () => {
+    //             clearTimeout(timeoutId);
+    //             cleanup();
+    //             resolve();
+    //         });
+    //     });
+    // }
 
-    /**
-     * Validate the payment form
-     * @returns Promise that resolves if validation passes, rejects with errors if it fails
-     */
     public async validateOrReject(): Promise<void> {
-        return await console.log('Validation not implemented yet');
+        return await console.log('Payment form validation not implemented yet');
     }
 
-    /**
-     * Submit the payment
-     * @param paymentIntentUuid The payment intent UUID
-     * @returns Promise that resolves with the payment result
-     */
     public async submitPayment(): Promise<void> {
-        return await console.log('Payment submission not implemented yet.');
+        return await this.iframe.postMessage({ name: MessageTypeEnum.SUBMIT_PAYMENT }, '*');
     }
 
-    /**
-     * Clean up resources
-     */
     private cleanup(): void {
         if (this.iframe) {
             this.iframe.unmount();
-            this.iframe = null;
         }
     }
 }

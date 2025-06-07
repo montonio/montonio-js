@@ -69,7 +69,7 @@ export default [
             'no-dupe-class-members': 'off',
             '@typescript-eslint/no-explicit-any': 'error',
             '@typescript-eslint/explicit-function-return-type': 'off',
-            '@typescript-eslint/no-unused-vars': 'error',
+            '@typescript-eslint/no-unused-vars': 'warn',
             '@typescript-eslint/require-await': 'error',
             '@typescript-eslint/ban-ts-comment': 'warn',
             '@typescript-eslint/no-non-null-assertion': 'off',

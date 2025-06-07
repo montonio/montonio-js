@@ -1,3 +1,4 @@
+import { MessagePayload } from '../../services/Messaging/types';
 import { IframeOptions } from './types';
 
 /**
@@ -8,8 +9,6 @@ export class Iframe {
     private readonly defaultStyles: Partial<CSSStyleDeclaration> = {
         width: '100%',
         height: '100%',
-        border: 'none',
-        overflow: 'hidden',
     };
 
     /**
@@ -83,5 +82,16 @@ export class Iframe {
                 resolve();
             };
         });
+    }
+
+    /**
+     * Post a message to the child iframe
+     */
+    public postMessage(messagePayload: MessagePayload, targetOrigin: string = '*'): void {
+        if (!this.element.contentWindow) {
+            throw new Error('Iframe is not available. Make sure the iframe is mounted and loaded.');
+        }
+
+        this.element.contentWindow.postMessage(messagePayload, targetOrigin);
     }
 }
