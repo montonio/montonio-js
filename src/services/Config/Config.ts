@@ -6,14 +6,16 @@ import { Environment, EnvironmentVariables } from './types';
  */
 export class ConfigService {
     private static instance: ConfigService;
-    private environmentVariables: EnvironmentVariables = {
-        stargateUrl: {
-            sandbox: import.meta.env.VITE_STARGATE_SANDBOX_URL,
-            production: import.meta.env.VITE_STARGATE_PRODUCTION_URL,
-        },
-    };
+    private environmentVariables: EnvironmentVariables;
 
-    private constructor() {}
+    private constructor() {
+        this.environmentVariables = {
+            stargateUrl: {
+                sandbox: import.meta.env.VITE_STARGATE_SANDBOX_URL,
+                production: import.meta.env.VITE_STARGATE_PRODUCTION_URL,
+            },
+        };
+    }
 
     public static getInstance(): ConfigService {
         if (!ConfigService.instance) {

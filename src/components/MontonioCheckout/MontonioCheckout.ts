@@ -12,7 +12,6 @@ export class MontonioCheckout {
     private config: ConfigService;
     private iframe!: Iframe;
     private mountElement: HTMLElement | null = null;
-    // private readonly READY_MESSAGE_TYPE = 'montonio:checkout.iframe.ready';
 
     constructor(options: CheckoutOptions) {
         this.options = options;
