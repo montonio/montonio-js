@@ -11,6 +11,7 @@ export default defineConfig({
             formats: ['es', 'umd'],
             fileName: (format) => `montonio.${format}.js`,
         },
+        sourcemap: true,
         rollupOptions: {
             plugins: [typescript()],
         },
