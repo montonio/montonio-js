@@ -1,6 +1,6 @@
 {
     "name": "@montonio/montonio-js",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Montonio JS SDK for front-end web applications",
     "type": "module",
     "publishConfig": {
