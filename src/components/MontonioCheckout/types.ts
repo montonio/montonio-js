@@ -10,12 +10,6 @@ export interface CheckoutOptions {
     sessionUuid: string;
 
     /**
-     * The element to mount the checkout to
-     * Can be a CSS selector or HTMLElement
-     */
-    mountTo: string | HTMLElement;
-
-    /**
      * Environment to use
      * Defaults to 'production'
      */

@@ -21,15 +21,12 @@ export class MontonioCheckout {
     }
 
     /**
-     * Initialize the checkout
-     * 1. Fetch the checkout session
-     * 2. Create and mount the iframe
-     * 3. Wait for the ready message from the iframe
-     * @returns Promise that resolves with the MontonioCheckout instance
+     * Mount the checkout to the DOM
      */
-    public async initialize(): Promise<this> {
+    public async mount(mountTo: string | HTMLElement): Promise<boolean> {
         try {
-            this.mountElement = await getElement(this.options.mountTo);
+            this.mountElement = await getElement(mountTo);
+
             const sessionData = await this.fetchSession();
 
             this.iframe = new Iframe({
@@ -41,7 +38,7 @@ export class MontonioCheckout {
 
             await this.iframe.waitForLoad();
 
-            return this;
+            return true;
         } catch (error) {
             // Clean up if initialization fails
             this.cleanup();
