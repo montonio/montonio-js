@@ -42,15 +42,15 @@ To integrate Montonio's embeddable payment methods to your checkout page, you fi
 ### 1. Initialize MontonioCheckout
 
 ```javascript
-import { loadMontonioCheckout } from '@montonio/montonio-js'; // ES Module usage. See above for UMD imports
+import { MontonioCheckout } from '@montonio/montonio-js'; // ES Module usage. See above for UMD imports
 
 const checkoutOptions = {
-    sessionUuid: 'montonio-session-uuid', // The UUID of the session created on your server
-    mountTo: '#montonio-checkout-container', // The CSS selector string or HTMLElement of the container to mount the Montonio Checkout component
-    environment: 'sandbox' // Defaults to 'production'
-}
+    sessionUuid, // The UUID of the session created on your server
+    environment: 'sandbox', // Defaults to 'production'
+};
 
-const montonioCheckout = await loadMontonioCheckout(checkoutOptions);
+const montonioCheckout = new MontonioCheckout(checkoutOptions);
+await montonioCheckout.mount('#montonio-checkout-container'); // The CSS selector string or HTMLElement of the container to mount the Montonio Checkout component
 ```
 
 To initialize the MontonioCheckout component, the `loadMontonioCheckout` function will talk to the Montonio API to get the session URL, and render the Montonio Checkout iframe in the specified container. The library will also set up a messaging channel to exchange messages between the iframe and the parent window.
