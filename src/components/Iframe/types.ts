@@ -33,15 +33,15 @@ export interface MessageOptions {
 }
 
 export enum MessageTypeEnum {
-    CHECKOUT_IFRAME_READY = 'montonio:checkout.iframeReady',
-    ADYEN_EMBEDDED_IFRAME_READY = 'payment_component_loaded', // TODO: change later to montonio:checkout.adyenEmbeddedIframeReady
-    CHECKOUT_SUBMIT_PAYMENT = 'montonio:checkout.submitPayment',
+    CHECKOUT_PAYMENT_COMPONENT_READY = 'montonio:checkout.paymentComponentReady',
     CHECKOUT_CHANGE_LOCALE = 'montonio:checkout.changeLocale',
-    THREE_D_SECURE_COMPONENT_LOADED = 'three_d_secure_component_loaded',
-    START_EMBEDDED_THREE_D_SECURE_PROCESS = 'start_three_d_secure_process ',
-    END_EMBEDDED_THREE_D_SECURE_PROCESS = 'end_three_d_secure_process',
-    START_REDIRECT_THREE_D_SECURE_PROCESS = 'start_redirect_three_d_secure_process',
-    SUBMIT_PAYMENT = 'submit_payment',
+    CHECKOUT_SUBMIT_PAYMENT = 'montonio:checkout.submitPayment',
+    CHECKOUT_START_PAYMENT_AUTH = 'montonio:checkout.startPaymentAuth',
+    CHECKOUT_SEND_PAYMENT_AUTH_DATA = 'montonio:checkout.sendPaymentAuthData',
+    CHECKOUT_PAYMENT_AUTH_COMPONENT_READY = 'montonio:checkout.paymentAuthComponentReady',
+    CHECKOUT_PAYMENT_AUTH_COMPLETED = 'montonio:checkout.paymentAuthCompleted',
+    CHECKOUT_PAYMENT_COMPLETED = 'montonio:checkout.paymentCompleted',
+    CHECKOUT_PAYMENT_FAILED = 'montonio:checkout.paymentFailed',
 }
 
 export interface MessageData<T = unknown> {
@@ -49,16 +49,8 @@ export interface MessageData<T = unknown> {
     payload?: T;
 }
 
-export interface CheckoutIframeReadyMessage extends MessageData {
-    name: MessageTypeEnum.CHECKOUT_IFRAME_READY;
-}
-
-export interface AdyenEmbeddedIframeReadyMessage extends MessageData {
-    name: MessageTypeEnum.ADYEN_EMBEDDED_IFRAME_READY;
-}
-
-export interface CheckoutSubmitPaymentMessage extends MessageData {
-    name: MessageTypeEnum.CHECKOUT_SUBMIT_PAYMENT;
+export interface CheckoutPaymentComponentReadyMessage extends MessageData {
+    name: MessageTypeEnum.CHECKOUT_PAYMENT_COMPONENT_READY;
 }
 
 export interface CheckoutChangeLocaleMessage extends MessageData {
@@ -66,4 +58,37 @@ export interface CheckoutChangeLocaleMessage extends MessageData {
     payload: {
         locale: LocaleEnum;
     };
+}
+
+export interface CheckoutSubmitPaymentMessage extends MessageData {
+    name: MessageTypeEnum.CHECKOUT_SUBMIT_PAYMENT;
+}
+
+export interface CheckoutStartPaymentAuthMessage extends MessageData {
+    name: MessageTypeEnum.CHECKOUT_START_PAYMENT_AUTH;
+    payload: {
+        paymentAuthData: unknown;
+        paymentAuthUrl: string;
+    };
+}
+
+export interface CheckoutSendPaymentAuthDataMessage extends MessageData {
+    name: MessageTypeEnum.CHECKOUT_SEND_PAYMENT_AUTH_DATA;
+    payload: unknown;
+}
+
+export interface CheckoutPaymentAuthComponentReadyMessage extends MessageData {
+    name: MessageTypeEnum.CHECKOUT_PAYMENT_AUTH_COMPONENT_READY;
+}
+
+export interface CheckoutPaymentAuthCompletedMessage extends MessageData {
+    name: MessageTypeEnum.CHECKOUT_PAYMENT_AUTH_COMPLETED;
+}
+
+export interface CheckoutPaymentCompletedMessage extends MessageData {
+    name: MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED;
+}
+
+export interface CheckoutPaymentFailedMessage extends MessageData {
+    name: MessageTypeEnum.CHECKOUT_PAYMENT_FAILED;
 }

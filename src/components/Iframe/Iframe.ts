@@ -9,7 +9,7 @@ export class Iframe {
         width: '100%',
         height: '100%',
     };
-    private messageHandlers: Map<MessageTypeEnum, Set<(payload?: unknown) => void>> = new Map();
+    private messageHandlers: Map<MessageTypeEnum, Set<(message: MessageData) => void>> = new Map();
     private globalListenerAttached = false;
 
     constructor(private options: IframeOptions) {
@@ -35,41 +35,9 @@ export class Iframe {
         Object.assign(this.element.style, combinedStyles);
     }
 
-    /**
-     * Set up the message listener for this iframe instance
-     */
-    private setupMessageListener(): void {
-        if (this.globalListenerAttached) return;
-
-        window.addEventListener('message', (event) => {
-            try {
-                // Only process messages from this iframe's content window
-                if (event.source !== this.element.contentWindow) {
-                    return;
-                }
-
-                // Validate that the message is properly formatted
-                if (!event.data || typeof event.data !== 'object' || !event.data.name) {
-                    return;
-                }
-
-                const message = event.data as MessageData;
-                const handlers = this.messageHandlers.get(message.name);
-
-                if (handlers) {
-                    handlers.forEach((handler) => handler(message));
-                }
-            } catch (error) {
-                console.error('Error processing iframe message:', error);
-            }
-        });
-
-        this.globalListenerAttached = true;
-    }
-
     public mount(): HTMLIFrameElement {
         // Clear the container first
-        this.options.mountElement.innerHTML = '';
+        // this.options.mountElement.innerHTML = '';
 
         // Append the iframe
         this.options.mountElement.appendChild(this.element);
@@ -114,17 +82,20 @@ export class Iframe {
      * @param timeout Timeout in milliseconds
      * @returns Promise that resolves when the message is received or rejects on timeout
      */
-    public waitForMessage<T = unknown>(messageType: MessageTypeEnum, timeout = 10000): Promise<T> {
+    public waitForMessage<T extends MessageData = MessageData>(
+        messageType: MessageTypeEnum,
+        timeout = 10000,
+    ): Promise<T> {
         return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
                 cleanup();
                 reject(new Error(`Message ${messageType} timeout after ${timeout}ms`));
             }, timeout);
 
-            const cleanup = this.subscribe(messageType, (payload?: T) => {
+            const cleanup = this.subscribe<T>(messageType, (message: T) => {
                 clearTimeout(timeoutId);
                 cleanup();
-                resolve(payload as T);
+                resolve(message);
             });
         });
     }
@@ -135,17 +106,20 @@ export class Iframe {
      * @param handler Handler function to call when the message is received
      * @returns Cleanup function to remove the listener
      */
-    public subscribe<T = unknown>(messageType: MessageTypeEnum, handler: (payload?: T) => void): () => void {
+    public subscribe<T extends MessageData = MessageData>(
+        messageType: MessageTypeEnum,
+        handler: (message: T) => void,
+    ): () => void {
         if (!this.messageHandlers.has(messageType)) {
             this.messageHandlers.set(messageType, new Set());
         }
 
         const handlers = this.messageHandlers.get(messageType)!;
-        handlers.add(handler as (payload?: unknown) => void);
+        handlers.add(handler as (message: MessageData) => void);
 
         // Return a cleanup function
         return () => {
-            handlers.delete(handler as (payload?: unknown) => void);
+            handlers.delete(handler as (message: MessageData) => void);
             if (handlers.size === 0) {
                 this.messageHandlers.delete(messageType);
             }
@@ -161,5 +135,37 @@ export class Iframe {
         }
 
         this.element.contentWindow.postMessage(messageData, targetOrigin);
+    }
+
+    /**
+     * Set up the message listener for this iframe instance
+     */
+    private setupMessageListener(): void {
+        if (this.globalListenerAttached) return;
+
+        window.addEventListener('message', (event) => {
+            try {
+                // Only process messages from this iframe's content window
+                if (event.source !== this.element.contentWindow) {
+                    return;
+                }
+
+                // Validate that the message is properly formatted
+                if (!event.data || typeof event.data !== 'object' || !event.data.name) {
+                    return;
+                }
+
+                const message = event.data as MessageData;
+                const handlers = this.messageHandlers.get(message.name);
+
+                if (handlers) {
+                    handlers.forEach((handler) => handler(message));
+                }
+            } catch (error) {
+                console.error('Error processing iframe message:', error);
+            }
+        });
+
+        this.globalListenerAttached = true;
     }
 }
