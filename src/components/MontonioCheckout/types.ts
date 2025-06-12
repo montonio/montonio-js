@@ -10,6 +10,11 @@ export interface CheckoutOptions {
     sessionUuid: string;
 
     /**
+     * Defaults to 'en_US' on the backend
+     */
+    locale?: LocaleEnum;
+
+    /**
      * Environment to use
      * Defaults to 'production'
      */
@@ -41,4 +46,14 @@ export interface PaymentResult {
     paymentStatus: string;
     orderToken: string;
     returnUrl: string;
+}
+
+export enum LocaleEnum {
+    EN_US = 'en_US',
+    ET = 'et',
+    LV = 'lv',
+    LT = 'lt',
+    PL = 'pl',
+    FI = 'fi',
+    RU = 'ru',
 }

@@ -1,5 +1,4 @@
-import { MessagePayload } from '../../services/Messaging/types';
-import { IframeOptions } from './types';
+import { IframeOptions, MessageData, MessageTypeEnum } from './types';
 
 /**
  * Iframe component for rendering and communicating with iframes
@@ -10,24 +9,25 @@ export class Iframe {
         width: '100%',
         height: '100%',
     };
+    private messageHandlers: Map<MessageTypeEnum, Set<(payload?: unknown) => void>> = new Map();
+    private globalListenerAttached = false;
 
-    /**
-     * Create a new iframe
-     * @param options Iframe options
-     */
     constructor(private options: IframeOptions) {
         this.element = document.createElement('iframe');
         this.setupIframe();
+        this.setupMessageListener();
     }
 
-    /**
-     * Setup the iframe with the provided options
-     */
     private setupIframe(): void {
-        const { src, allow = 'payment', styles = {} } = this.options;
+        const { src, queryParams, allow = 'payment', styles = {} } = this.options;
 
         // Set iframe attributes
         this.element.src = src;
+
+        if (queryParams) {
+            this.element.src += `?${new URLSearchParams(queryParams).toString()}`;
+        }
+
         this.element.allow = allow;
 
         // Apply styles
@@ -36,9 +36,37 @@ export class Iframe {
     }
 
     /**
-     * Mount the iframe to the DOM
-     * @returns The iframe element
+     * Set up the message listener for this iframe instance
      */
+    private setupMessageListener(): void {
+        if (this.globalListenerAttached) return;
+
+        window.addEventListener('message', (event) => {
+            try {
+                // Only process messages from this iframe's content window
+                if (event.source !== this.element.contentWindow) {
+                    return;
+                }
+
+                // Validate that the message is properly formatted
+                if (!event.data || typeof event.data !== 'object' || !event.data.name) {
+                    return;
+                }
+
+                const message = event.data as MessageData;
+                const handlers = this.messageHandlers.get(message.name);
+
+                if (handlers) {
+                    handlers.forEach((handler) => handler(message));
+                }
+            } catch (error) {
+                console.error('Error processing iframe message:', error);
+            }
+        });
+
+        this.globalListenerAttached = true;
+    }
+
     public mount(): HTMLIFrameElement {
         // Clear the container first
         this.options.mountElement.innerHTML = '';
@@ -49,19 +77,15 @@ export class Iframe {
         return this.element;
     }
 
-    /**
-     * Remove the iframe from the DOM
-     */
     public unmount(): void {
+        // Clear all message handlers when unmounting
+        this.messageHandlers.clear();
+
         if (this.element.parentNode) {
             this.element.parentNode.removeChild(this.element);
         }
     }
 
-    /**
-     * Get the iframe element
-     * @returns The iframe element
-     */
     public getElement(): HTMLIFrameElement {
         return this.element;
     }
@@ -85,13 +109,57 @@ export class Iframe {
     }
 
     /**
+     * Wait for a specific message from the iframe
+     * @param messageType The message type to wait for
+     * @param timeout Timeout in milliseconds
+     * @returns Promise that resolves when the message is received or rejects on timeout
+     */
+    public waitForMessage<T = unknown>(messageType: MessageTypeEnum, timeout = 10000): Promise<T> {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                cleanup();
+                reject(new Error(`Message ${messageType} timeout after ${timeout}ms`));
+            }, timeout);
+
+            const cleanup = this.subscribe(messageType, (payload?: T) => {
+                clearTimeout(timeoutId);
+                cleanup();
+                resolve(payload as T);
+            });
+        });
+    }
+
+    /**
+     * Subscribe to messages from the iframe
+     * @param messageType The message type to listen for
+     * @param handler Handler function to call when the message is received
+     * @returns Cleanup function to remove the listener
+     */
+    public subscribe<T = unknown>(messageType: MessageTypeEnum, handler: (payload?: T) => void): () => void {
+        if (!this.messageHandlers.has(messageType)) {
+            this.messageHandlers.set(messageType, new Set());
+        }
+
+        const handlers = this.messageHandlers.get(messageType)!;
+        handlers.add(handler as (payload?: unknown) => void);
+
+        // Return a cleanup function
+        return () => {
+            handlers.delete(handler as (payload?: unknown) => void);
+            if (handlers.size === 0) {
+                this.messageHandlers.delete(messageType);
+            }
+        };
+    }
+
+    /**
      * Post a message to the child iframe
      */
-    public postMessage(messagePayload: MessagePayload, targetOrigin: string = '*'): void {
+    public postMessage(messageData: MessageData, targetOrigin: string = '*'): void {
         if (!this.element.contentWindow) {
             throw new Error('Iframe is not available. Make sure the iframe is mounted and loaded.');
         }
 
-        this.element.contentWindow.postMessage(messagePayload, targetOrigin);
+        this.element.contentWindow.postMessage(messageData, targetOrigin);
     }
 }

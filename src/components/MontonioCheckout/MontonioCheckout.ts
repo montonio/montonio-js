@@ -1,21 +1,27 @@
-import { CheckoutOptions, GatewayUrlResponse } from './types';
+import { CheckoutOptions, GatewayUrlResponse, LocaleEnum } from './types';
 import { Iframe } from '../Iframe/Iframe';
 import { ConfigService, HTTPService } from '../../services';
 import { getElement } from '../../utils';
 import { Environment } from '../../services/Config/types';
-import { MessageTypeEnum } from '../../services/Messaging/types';
+import { MessageTypeEnum, CheckoutChangeLocaleMessage, AdyenEmbeddedIframeReadyMessage } from '../Iframe/types';
 
 export class MontonioCheckout {
-    private options: CheckoutOptions;
-    private environment: Environment;
     private http: HTTPService;
     private config: ConfigService;
     private iframe!: Iframe;
+
+    private options: CheckoutOptions;
+    private environment: Environment;
+    private locale: LocaleEnum | null;
+
     private mountElement: HTMLElement | null = null;
+
+    public loaded: boolean = false;
 
     constructor(options: CheckoutOptions) {
         this.options = options;
         this.environment = options.environment || 'production';
+        this.locale = options.locale || null;
         this.http = HTTPService.getInstance();
         this.config = ConfigService.getInstance();
     }
@@ -25,18 +31,22 @@ export class MontonioCheckout {
      */
     public async mount(mountTo: string | HTMLElement): Promise<boolean> {
         try {
-            this.mountElement = await getElement(mountTo);
+            this.mountElement = getElement(mountTo);
 
             const sessionData = await this.fetchSession();
-
             this.iframe = new Iframe({
                 src: sessionData.url,
+                queryParams: this.locale ? { locale: this.locale } : undefined,
                 mountElement: this.mountElement,
             });
 
             this.iframe.mount();
 
-            await this.iframe.waitForLoad();
+            await this.iframe.waitForMessage<AdyenEmbeddedIframeReadyMessage>(
+                MessageTypeEnum.ADYEN_EMBEDDED_IFRAME_READY,
+            );
+
+            this.loaded = true;
 
             return true;
         } catch (error) {
@@ -46,44 +56,37 @@ export class MontonioCheckout {
         }
     }
 
+    public setLocale(locale: LocaleEnum): void {
+        this.locale = locale;
+        const checkoutChangeLocaleMessage: CheckoutChangeLocaleMessage = {
+            name: MessageTypeEnum.CHECKOUT_CHANGE_LOCALE,
+            payload: { locale },
+        };
+        this.iframe.postMessage(checkoutChangeLocaleMessage);
+    }
+
     /**
      * Fetch the session URL from the API
      */
     private async fetchSession(): Promise<GatewayUrlResponse> {
         const baseUrl = this.config.getConfig('stargateUrl', this.environment);
 
-        const url = `${baseUrl}/api/sessions/${this.options.sessionUuid}/gateway-url`;
+        // add preferredLocale to the query params
+        const url = `${baseUrl}/api/sessions/${this.options.sessionUuid}/gateway-url?preferredLocale=${this.locale}`;
 
         return await this.http.get<GatewayUrlResponse>(url);
     }
 
-    /**
-     * Wait for the ready message from the iframe
-     * @returns Promise that resolves when the ready message is received
-     */
-    // private waitForReadyMessage(): Promise<void> {
-    //     return new Promise((resolve, reject) => {
-    //         // Set a timeout for the ready message
-    //         const timeoutId = setTimeout(() => {
-    //             console.error('Timeout waiting for the checkout iframe to be ready');
-    //             resolve();
-    //         }, 10000);
-
-    //         // Listen for the ready message
-    //         const cleanup = this.messaging.onMessage(this.READY_MESSAGE_TYPE, () => {
-    //             clearTimeout(timeoutId);
-    //             cleanup();
-    //             resolve();
-    //         });
-    //     });
-    // }
-
     public async validateOrReject(): Promise<void> {
+        // TODO: Temporary rule disable: the method will later have more awaitable things
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         return await console.log('Payment form validation not implemented yet');
     }
 
     public async submitPayment(): Promise<void> {
-        return await this.iframe.postMessage({ name: MessageTypeEnum.SUBMIT_PAYMENT }, '*');
+        // TODO: Temporary rule disable: the method will later have more awaitable things
+        // eslint-disable-next-line @typescript-eslint/await-thenable
+        return await this.iframe.postMessage({ name: MessageTypeEnum.CHECKOUT_SUBMIT_PAYMENT });
     }
 
     private cleanup(): void {

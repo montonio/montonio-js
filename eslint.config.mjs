@@ -81,6 +81,7 @@ export default [
             '@typescript-eslint/only-throw-error': 'error',
             '@typescript-eslint/no-floating-promises': 'error',
             '@typescript-eslint/no-warning-comments': 'off',
+            '@typescript-eslint/await-thenable': 'error',
         },
     },
 ];
