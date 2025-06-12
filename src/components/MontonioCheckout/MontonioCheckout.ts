@@ -10,7 +10,6 @@ import {
     CheckoutPaymentCompletedMessage,
     CheckoutStartPaymentAuthMessage,
     CheckoutPaymentAuthComponentReadyMessage,
-    CheckoutPaymentAuthCompletedMessage,
 } from '../Iframe/types';
 
 export class MontonioCheckout {
@@ -96,7 +95,7 @@ export class MontonioCheckout {
     }
 
     public async submitPayment(): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             // set up payment auth handler
             this.iframe.subscribe<CheckoutStartPaymentAuthMessage>(
                 MessageTypeEnum.CHECKOUT_START_PAYMENT_AUTH,

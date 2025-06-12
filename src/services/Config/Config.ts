@@ -11,8 +11,11 @@ export class ConfigService {
     private constructor() {
         this.environmentVariables = {
             stargateUrl: {
-                sandbox: import.meta.env.VITE_STARGATE_SANDBOX_URL,
-                production: import.meta.env.VITE_STARGATE_PRODUCTION_URL,
+                sandbox: import.meta.env.VITE_STARGATE_LIVE_SANDBOX_URL,
+                production: import.meta.env.VITE_STARGATE_LIVE_PRODUCTION_URL,
+                'prelive-sandbox': import.meta.env.VITE_STARGATE_PRELIVE_SANDBOX_URL,
+                'prelive-production': import.meta.env.VITE_STARGATE_PRELIVE_PRODUCTION_URL,
+                development: import.meta.env.VITE_STARGATE_DEVELOPMENT_URL,
             },
         };
     }
