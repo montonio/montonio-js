@@ -1,4 +1,4 @@
-import { Environment } from '../../services/Config/types';
+import { EnvironmentOptions } from '../../services/Config/types';
 
 /**
  * Montonio Checkout options
@@ -18,7 +18,7 @@ export interface CheckoutOptions {
      * Environment to use
      * Defaults to 'production'
      */
-    environment?: Environment;
+    environment?: EnvironmentOptions;
 
     /**
      * Callback when payment is completed successfully

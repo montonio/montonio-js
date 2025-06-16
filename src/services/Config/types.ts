@@ -8,4 +8,12 @@ export interface EnvironmentVariables {
     };
 }
 
-export type Environment = 'sandbox' | 'production' | 'prelive-sandbox' | 'prelive-production' | 'development';
+export enum Environment {
+    DEVELOPMENT = 'development',
+    PRODUCTION = 'production',
+    SANDBOX = 'sandbox',
+    PRELIVE_SANDBOX = 'prelive-sandbox',
+    PRELIVE_PRODUCTION = 'prelive-production',
+}
+
+export type EnvironmentOptions = Environment | `${Environment}`;

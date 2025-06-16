@@ -1,4 +1,4 @@
-import { Environment, EnvironmentVariables } from './types';
+import { EnvironmentOptions, EnvironmentVariables } from './types';
 
 /**
  * Returns environment variables from the .env file
@@ -27,7 +27,7 @@ export class ConfigService {
         return ConfigService.instance;
     }
 
-    public getConfig(name: keyof EnvironmentVariables, environment: Environment): string {
+    public getConfig(name: keyof EnvironmentVariables, environment: EnvironmentOptions): string {
         return this.environmentVariables[name][environment];
     }
 }
