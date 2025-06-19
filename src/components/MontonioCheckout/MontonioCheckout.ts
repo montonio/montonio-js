@@ -93,7 +93,7 @@ export class MontonioCheckout {
         return await console.log('Payment form validation not implemented yet');
     }
 
-    public async submitPayment(): Promise<void> {
+    public async submitPayment(): Promise<CheckoutPaymentCompletedMessage> {
         return new Promise((resolve) => {
             // Set up payment auth handler through the iframe component
             const cleanupPaymentAuth = this.iframe.subscribe<CheckoutStartPaymentAuthMessage>(
@@ -117,7 +117,7 @@ export class MontonioCheckout {
 
                         cleanupPaymentAuth();
                         this.cleanupPaymentAuth();
-                        resolve();
+                        resolve(completionMessage);
                     } catch (error) {
                         console.error('Payment auth failed:', error);
                         cleanupPaymentAuth();
@@ -134,7 +134,7 @@ export class MontonioCheckout {
                     console.log('CHECKOUT_PAYMENT_COMPLETED (from main iframe)', message);
                     cleanupPaymentCompleted();
                     cleanupPaymentAuth();
-                    resolve();
+                    resolve(message);
                 },
             );
 

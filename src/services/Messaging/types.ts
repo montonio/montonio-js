@@ -59,6 +59,10 @@ export interface CheckoutPaymentAuthCompletedMessage extends MessageData {
 
 export interface CheckoutPaymentCompletedMessage extends MessageData {
     name: MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED;
+    payload: {
+        paymentIntentUuid: string;
+        resultCode: string;
+    }
 }
 
 export interface CheckoutPaymentFailedMessage extends MessageData {
