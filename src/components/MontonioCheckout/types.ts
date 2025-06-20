@@ -48,6 +48,10 @@ export interface PaymentResult {
     returnUrl: string;
 }
 
+export interface ReturnUrlResponse {
+    merchantReturnUrl?: string;
+}
+
 export enum LocaleEnum {
     EN_US = 'en_US',
     ET = 'et',

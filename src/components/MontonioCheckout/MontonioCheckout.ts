@@ -1,6 +1,6 @@
-import { CheckoutOptions, GatewayUrlResponse, LocaleEnum } from './types';
+import { CheckoutOptions, GatewayUrlResponse, LocaleEnum, ReturnUrlResponse } from './types';
 import { Iframe } from '../Iframe/Iframe';
-import { PaymentAuth } from '../PaymentAuth/PaymentAuth';
+import { PaymentAuth } from '../PaymentAuth';
 import { ConfigService, HTTPService } from '../../services';
 import { getElement } from '../../utils';
 import { EnvironmentOptions, Environment } from '../../services/Config/types';
@@ -130,11 +130,21 @@ export class MontonioCheckout {
             // Subscribe to payment completion from main iframe
             const cleanupPaymentCompleted = this.iframe.subscribe(
                 MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
-                (message: CheckoutPaymentCompletedMessage) => {
+                async (message: CheckoutPaymentCompletedMessage) => {
                     console.log('CHECKOUT_PAYMENT_COMPLETED (from main iframe)', message);
                     cleanupPaymentCompleted();
                     cleanupPaymentAuth();
-                    resolve(message);
+
+                    // TODO check if payment completed successfully
+                    // start polling
+                    const result = await this.fetchReturnUrl(message.payload.paymentIntentUuid);
+                    resolve({
+                        ...message,
+                        payload: {
+                            ...message.payload,
+                            returnUrl: result.merchantReturnUrl,
+                        }
+                    });
                 },
             );
 
@@ -163,5 +173,37 @@ export class MontonioCheckout {
      */
     public destroy(): void {
         this.cleanup();
+    }
+
+    /**
+     * After a payment has completed, fetch the return URL. Keep fetching until we
+     * exhaust all the attempts
+     */
+    private async fetchReturnUrl(paymentIntentUuid: string): Promise<ReturnUrlResponse> {
+        const baseUrl = this.config.getConfig('stargateUrl', this.environment);
+        const url = `${baseUrl}/api/payment-intents/${paymentIntentUuid}/return-url`;
+        const MAX_ATTEMPTS = 10;
+        const DELAY_BETWEEN_ATTEMPTS_IN_MS = 1000;
+        let attempts = 0;
+
+        while (attempts < MAX_ATTEMPTS) {
+            try {
+                const result = await this.http.get<ReturnUrlResponse>(url);
+                attempts++;
+                if (result?.merchantReturnUrl) {
+                    return result;
+                }
+            } catch (error) {
+                console.error('Error fetching return URL:', error);
+            }
+
+            // Wait for 1 second before the next attempt
+            if (attempts < MAX_ATTEMPTS) {
+                await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_ATTEMPTS_IN_MS));
+            }
+        }
+
+        console.error(`Failed to fetch the return url after ${attempts} attempts`);
+        return {};
     }
 }

@@ -62,6 +62,7 @@ export interface CheckoutPaymentCompletedMessage extends MessageData {
     payload: {
         paymentIntentUuid: string;
         resultCode: string;
+        returnUrl?: string;
     }
 }
 
