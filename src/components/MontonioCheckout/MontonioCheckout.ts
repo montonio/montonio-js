@@ -143,7 +143,7 @@ export class MontonioCheckout {
                         payload: {
                             ...message.payload,
                             returnUrl: result.merchantReturnUrl,
-                        }
+                        },
                     });
                 },
             );

@@ -63,7 +63,7 @@ export interface CheckoutPaymentCompletedMessage extends MessageData {
         paymentIntentUuid: string;
         resultCode: string;
         returnUrl?: string;
-    }
+    };
 }
 
 export interface CheckoutPaymentFailedMessage extends MessageData {
