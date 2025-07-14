@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Montonio JS Playground</title>
+</head>
+<body>
+    <h1>Montonio JS Playground</h1>
+    <div id="montonio-checkout"></div>
+    <script type="module">
+        import { loadMontonioCheckout } from '/src/index.ts';
+
+        const checkout1 = await loadMontonioCheckout({
+            sessionUuid: 'session1',
+            mountTo: '#montonio-checkout',
+            environment: 'production',
+        });
+        
+        const checkout2 = await loadMontonioCheckout({
+            sessionUuid: 'session2',
+            mountTo: '#montonio-checkout',
+            environment: 'production',
+        });
+    </script>
+    </body>
+</html>

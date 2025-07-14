@@ -1,0 +1,54 @@
+{
+    "name": "@montonio/montonio-js",
+    "version": "1.0.19",
+    "description": "Montonio JS SDK for front-end web applications",
+    "type": "module",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/@montonio"
+    },
+    "main": "dist/montonio.es.js",
+    "types": "dist/types/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/types/index.d.ts",
+                "default": "./dist/montonio.es.js"
+            }
+        },
+        "./services/Messaging": {
+            "types": "./dist/types/services/Messaging/index.d.ts",
+            "import": "./dist/montonio.es.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "start": "vite build --watch --mode development",
+        "dev": "vite --mode development",
+        "build": "vite build --mode live",
+        "build:prelive": "vite build --mode prelive",
+        "build:live": "vite build --mode live",
+        "build:watch": "vite build --watch --mode development",
+        "preview": "vite preview",
+        "test": "vitest run",
+        "lint": "eslint src"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.26.0",
+        "@rollup/plugin-replace": "^6.0.2",
+        "@rollup/plugin-typescript": "^12.1.2",
+        "@types/node": "^22.15.17",
+        "@typescript-eslint/eslint-plugin": "^8.32.1",
+        "@typescript-eslint/parser": "^8.32.1",
+        "eslint": "^9.26.0",
+        "eslint-config-prettier": "^10.1.5",
+        "eslint-plugin-prettier": "^5.4.0",
+        "globals": "^16.1.0",
+        "prettier": "^3.5.3",
+        "typescript": "5.8.3",
+        "typescript-eslint": "^8.32.1",
+        "vite": "6.3.5",
+        "vitest": "3.1.3"
+    }
+}
