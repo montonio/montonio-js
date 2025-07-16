@@ -9,10 +9,13 @@ export interface EnvironmentVariables {
 }
 
 export enum Environment {
+    /** @internal */
     DEVELOPMENT = 'development',
     PRODUCTION = 'production',
     SANDBOX = 'sandbox',
+    /** @internal */
     PRELIVE_SANDBOX = 'prelive-sandbox',
+    /** @internal */
     PRELIVE_PRODUCTION = 'prelive-production',
 }
 
