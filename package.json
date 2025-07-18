@@ -1,6 +1,6 @@
 {
     "name": "@montonio/montonio-js",
-    "version": "1.0.21",
+    "version": "1.0.23",
     "description": "Montonio JS SDK for front-end web applications",
     "type": "module",
     "publishConfig": {
@@ -27,15 +27,12 @@
     "scripts": {
         "start": "vite build --watch --mode development",
         "dev": "vite --mode development",
-        "build": "vite build --mode live",
         "build:dev": "vite build --mode development",
         "build:prelive": "vite build --mode prelive",
         "build:live": "vite build --mode live",
-        "build:watch": "vite build --watch --mode development",
         "preview": "vite preview",
         "test": "vitest run",
-        "lint": "eslint src",
-        "prepublishOnly": "npm run build:live"
+        "lint": "eslint src"
     },
     "repository": {
         "type": "git",
