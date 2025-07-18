@@ -1,0 +1,55 @@
+name: Prelive Deployment
+
+on:
+  push:
+    branches:
+      - prelive
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+    environment: prelive
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get base version from package.json
+        id: base_version
+        run: |
+          # Get version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "base_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set prelive version
+        run: |
+          # Set prerelease version without committing
+          npm version ${{ steps.base_version.outputs.base_version }}-prelive.0 --no-git-tag-version
+
+      - name: Build package
+        run: npm run build:prelive
+
+      - name: Publish to NPM
+        run: |
+          npm publish --tag prelive
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create deployment summary
+        run: |
+          PRELIVE_VERSION="${{ steps.base_version.outputs.base_version }}-prelive.0"
+          echo "## Prelive Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: prelive" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: $PRELIVE_VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- **NPM Tag**: prelive" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Command**: npm run build:prelive" >> $GITHUB_STEP_SUMMARY
+          echo "- **NPM Package**: [@montonio/montonio-js@$PRELIVE_VERSION](https://www.npmjs.com/package/@montonio/montonio-js/v/$PRELIVE_VERSION)" >> $GITHUB_STEP_SUMMARY
