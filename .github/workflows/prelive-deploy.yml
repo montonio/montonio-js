@@ -26,12 +26,8 @@ jobs:
       - name: Get base version from package.json
         id: base_version
         run: |
-          # Get version and ensure it's a clean version (no prerelease identifier)
+          # Get version from package.json
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          if [[ "$CURRENT_VERSION" == *"-"* ]]; then
-            echo "Error: package.json version '$CURRENT_VERSION' contains a prerelease identifier. Please use a clean version number like 1.0.0"
-            exit 1
-          fi
           echo "base_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Set prelive version

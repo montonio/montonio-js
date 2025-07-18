@@ -1,0 +1,75 @@
+name: Live Deployment
+
+on:
+  push:
+    branches:
+      - live
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+    environment: live
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          # Get version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build package
+        run: npm run build:live
+
+      - name: Publish to NPM
+        run: |
+          npm publish --tag latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create deployment summary
+        run: |
+          echo "## Live Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: live" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **NPM Tag**: latest" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Command**: npm run build:live" >> $GITHUB_STEP_SUMMARY
+          echo "- **NPM Package**: [@montonio/montonio-js@${{ steps.version.outputs.version }}](https://www.npmjs.com/package/@montonio/montonio-js/v/${{ steps.version.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+
+  release:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        run: |
+          gh release create v${{ steps.version.outputs.version }} \
+            --title "v${{ steps.version.outputs.version }}" \
+            --notes "## Release v${{ steps.version.outputs.version }}
+
+          This release has been automatically deployed to NPM as [@montonio/montonio-js@${{ steps.version.outputs.version }}](https://www.npmjs.com/package/@montonio/montonio-js/v/${{ steps.version.outputs.version }}).
+
+          ### Changes
+          See the commit history for detailed changes in this release."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
