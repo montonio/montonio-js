@@ -1,0 +1,85 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - prelive
+      - live
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check version is clean (no prerelease identifier)
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          if [[ "$CURRENT_VERSION" == *"-"* ]]; then
+            echo "❌ Error: package.json version '$CURRENT_VERSION' contains a prerelease identifier."
+            echo "Please use a clean version number like 1.0.0"
+            exit 1
+          fi
+          echo "✅ Version is clean: $CURRENT_VERSION"
+
+      - name: Check version consistency between package.json and package-lock.json
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          LOCK_VERSION=$(node -p "require('./package-lock.json').version")
+
+          if [[ "$PACKAGE_VERSION" != "$LOCK_VERSION" ]]; then
+            echo "❌ Error: Version mismatch detected!"
+            echo "package.json version: $PACKAGE_VERSION"
+            echo "package-lock.json version: $LOCK_VERSION"
+            echo ""
+            echo "Please use 'npm version $PACKAGE_VERSION' to update both files consistently."
+            echo "Do not manually edit version numbers in package.json or package-lock.json."
+            exit 1
+          fi
+          echo "✅ Version consistency check passed: $PACKAGE_VERSION"
+
+      - name: Check if version already exists on NPM
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          PRELIVE_VERSION="$CURRENT_VERSION-prelive.0"
+
+          echo "Checking NPM for existing versions..."
+          echo "Clean version: $CURRENT_VERSION"
+          echo "Prelive version: $PRELIVE_VERSION"
+
+          # Check if clean version exists
+          if npm view @montonio/montonio-js@$CURRENT_VERSION version 2>/dev/null; then
+            echo "❌ Error: Version $CURRENT_VERSION already exists on NPM!"
+            echo "Please bump the version number using 'npm version patch' (or 'minor' or 'major')."
+            exit 1
+          fi
+
+          # Check if prelive version exists
+          if npm view @montonio/montonio-js@$PRELIVE_VERSION version 2>/dev/null; then
+            echo "❌ Error: Prelive version $PRELIVE_VERSION already exists on NPM!"
+            echo "Please bump the version number using 'npm version patch' (or 'minor' or 'major')."
+            exit 1
+          fi
+
+          echo "✅ Version availability check passed - neither $CURRENT_VERSION nor $PRELIVE_VERSION exist on NPM"
+
+      - name: Create validation summary
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "## PR Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: $CURRENT_VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- **Clean version check**: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version consistency check**: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- **NPM availability check**: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ready for deployment**: ✅ Yes" >> $GITHUB_STEP_SUMMARY
