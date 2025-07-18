@@ -77,7 +77,7 @@ jobs:
             echo "✅ Version availability check passed - neither $CURRENT_VERSION nor $PRELIVE_VERSION exist on NPM"
           else
             echo "✅ Version availability check passed - $CURRENT_VERSION does not exist on NPM"
-            echo "ℹ️  Skipping prelive version check for live branch PR (prelive version expected to exist)"
+            echo "ℹ️ Skipping prelive version check for live branch PR (prelive version expected to exist)"
           fi
 
       - name: Create validation summary
