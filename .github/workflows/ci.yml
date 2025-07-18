@@ -1,23 +1,23 @@
 name: Lint, Test, and Build
 
 on:
-    pull_request:
-        branches:
-            - '**'
+  pull_request:
+    branches:
+      - "**"
 
 jobs:
-    lint:
-        runs-on: ubuntu-latest
-        timeout-minutes: 5
-        strategy:
-            matrix:
-                node-version: [ 20.x ]
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        node-version: [20.x]
 
-        steps:
-            -   uses: actions/checkout@v4
-            -   uses: actions/setup-node@v4
-                with:
-                    node-version: ${{ matrix.node-version }}
-                    cache: npm
-            -   run: npm ci
-            -   run: npm run lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
