@@ -1,0 +1,6 @@
+# Invokes an approving review from repo owner teams to merge PRs
+*                       @montonio/software-engineer-payments @montonio/software-engineer-post-checkout @montonio/cto
+
+# Restricted files cannot be edited without approval from the Infrastructure team
+/.github/**/cicd.yml    @montonio/infrastructure
+/.github/CODEOWNERS     @montonio/infrastructure
