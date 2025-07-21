@@ -119,8 +119,13 @@ jobs:
       - name: Get version from package.json
         id: version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # Get version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+          # Extract major version (e.g., "1.0.27" -> "1")
+          MAJOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f1)
+          echo "major_version=$MAJOR_VERSION" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         run: |
