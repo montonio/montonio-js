@@ -66,13 +66,13 @@ jobs:
         run: |
           # Define S3 bucket and paths
           S3_BUCKET="${{ vars.S3_BUCKET }}"
-          MAJOR_PATH="${{ steps.version.outputs.major_version }}.x.x/"
-          PATCH_PATH="${{ steps.version.outputs.version }}/"
+          MAJOR_PATH="${{ steps.version.outputs.major_version }}.x.x"
+          PATCH_PATH="${{ steps.version.outputs.version }}"
 
           # Remove existing files from both paths
           echo "Removing existing files from S3..."
-          aws s3 rm s3://$S3_BUCKET/$MAJOR_PATH --recursive
-          aws s3 rm s3://$S3_BUCKET/$PATCH_PATH --recursive
+          aws s3 rm s3://$S3_BUCKET/$MAJOR_PATH/ --recursive
+          aws s3 rm s3://$S3_BUCKET/$PATCH_PATH/ --recursive
 
           # Upload files to major version path
           echo "Uploading to major version path: $MAJOR_PATH"
