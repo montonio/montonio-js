@@ -49,8 +49,10 @@ jobs:
 
       - name: Configure AWS credentials for live
         uses: aws-actions/configure-aws-credentials@v4
+        env:
+          ROLE_ARN: ${{ secrets.AWS_OIDC_LIVE_ROLE_ARN }}
         with:
-          role-to-assume: ${{ secrets.AWS_OIDC_LIVE_ROLE_ARN }}
+          role-to-assume: $ROLE_ARN
           role-session-name: githubactions
           aws-region: eu-central-1
           role-chaining: true
