@@ -46,17 +46,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Configure AWS credentials OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::684012201052:role/github_actions_oidc_role
-          role-session-name: githubactions
-          aws-region: eu-central-1
-
       - name: Configure AWS credentials for live
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_OIDC_LIVE_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_OIDC_LIVE_ROLE_ARN }}
           role-session-name: githubactions
           aws-region: eu-central-1
           role-chaining: true
