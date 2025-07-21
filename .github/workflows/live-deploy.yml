@@ -12,6 +12,9 @@ jobs:
       matrix:
         node-version: [20.x]
     environment: live
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read # Required for checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +33,10 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
+          # Extract major version (e.g., "1.0.27" -> "1")
+          MAJOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f1)
+          echo "major_version=$MAJOR_VERSION" >> $GITHUB_OUTPUT
+
       - name: Build package
         run: npm run build:live
 
@@ -39,6 +46,54 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Configure AWS credentials OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::684012201052:role/github_actions_oidc_role
+          role-session-name: githubactions
+          aws-region: eu-central-1
+
+      - name: Configure AWS credentials for live
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_LIVE_ROLE_ARN }}
+          role-session-name: githubactions
+          aws-region: eu-central-1
+          role-chaining: true
+
+      - name: Upload UMD files to S3
+        run: |
+          # Define S3 bucket and paths
+          S3_BUCKET="${{ secrets.S3_BUCKET }}"
+          MAJOR_PATH="${{ steps.version.outputs.major_version }}.x.x/"
+          PATCH_PATH="${{ steps.version.outputs.version }}/"
+
+          # Remove existing files from both paths
+          echo "Removing existing files from S3..."
+          aws s3 rm s3://$S3_BUCKET/$MAJOR_PATH --recursive
+          aws s3 rm s3://$S3_BUCKET/$PATCH_PATH --recursive
+
+          # Upload files to major version path
+          echo "Uploading to major version path: $MAJOR_PATH"
+          aws s3 cp dist/montonio.umd.js s3://$S3_BUCKET/$MAJOR_PATH/montonio.umd.js
+          aws s3 cp dist/montonio.umd.js.map s3://$S3_BUCKET/$MAJOR_PATH/montonio.umd.js.map
+          aws s3 cp dist/montonio.es.js s3://$S3_BUCKET/$MAJOR_PATH/montonio.es.js
+          aws s3 cp dist/montonio.es.js.map s3://$S3_BUCKET/$MAJOR_PATH/montonio.es.js.map
+
+          # Upload files to patch version path
+          echo "Uploading to patch version path: $PATCH_PATH"
+          aws s3 cp dist/montonio.umd.js s3://$S3_BUCKET/$PATCH_PATH/montonio.umd.js
+          aws s3 cp dist/montonio.umd.js.map s3://$S3_BUCKET/$PATCH_PATH/montonio.umd.js.map
+          aws s3 cp dist/montonio.es.js s3://$S3_BUCKET/$PATCH_PATH/montonio.es.js
+          aws s3 cp dist/montonio.es.js.map s3://$S3_BUCKET/$PATCH_PATH/montonio.es.js.map
+
+      - name: Invalidate CloudFront cache
+        run: |
+          # Invalidate both version paths
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths '/${{ steps.version.outputs.major_version }}.x.x/*' '/${{ steps.version.outputs.version }}/*'
+
       - name: Create deployment summary
         run: |
           echo "## Live Deployment Summary" >> $GITHUB_STEP_SUMMARY
@@ -47,6 +102,9 @@ jobs:
           echo "- **NPM Tag**: latest" >> $GITHUB_STEP_SUMMARY
           echo "- **Build Command**: npm run build:live" >> $GITHUB_STEP_SUMMARY
           echo "- **NPM Package**: [@montonio/montonio-js@${{ steps.version.outputs.version }}](https://www.npmjs.com/package/@montonio/montonio-js/v/${{ steps.version.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **UMD CDN URLs**:" >> $GITHUB_STEP_SUMMARY
+          echo "  - Major version: [https://js.montonio.com/${{ steps.version.outputs.major_version }}.x.x/montonio.umd.js](https://js.montonio.com/${{ steps.version.outputs.major_version }}.x.x/montonio.umd.js)" >> $GITHUB_STEP_SUMMARY
+          echo "  - Specific version: [https://js.montonio.com/${{ steps.version.outputs.version }}/montonio.umd.js](https://js.montonio.com/${{ steps.version.outputs.version }}/montonio.umd.js)" >> $GITHUB_STEP_SUMMARY
 
   release:
     needs: deploy
@@ -70,6 +128,17 @@ jobs:
             --notes "## Release v${{ steps.version.outputs.version }}
 
           This release has been automatically deployed to NPM as [@montonio/montonio-js@${{ steps.version.outputs.version }}](https://www.npmjs.com/package/@montonio/montonio-js/v/${{ steps.version.outputs.version }}).
+
+          ### UMD usage
+          You can embed the UMD version directly from our CDN like this:
+
+          \`\`\`html
+          <!-- Latest major version (auto-updates) -->
+          <script src=\"https://js.montonio.com/${{ steps.version.outputs.major_version }}.x.x/montonio.umd.js\"></script>
+
+          <!-- Specific version (pinned) -->
+          <script src=\"https://js.montonio.com/${{ steps.version.outputs.version }}/montonio.umd.js\"></script>
+          \`\`\`
 
           ### Changes
           See the commit history for detailed changes in this release."
