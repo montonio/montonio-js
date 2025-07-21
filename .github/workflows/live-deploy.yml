@@ -51,7 +51,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_MANAGEMENT_ROLE_ARN }}
-          role-session-name: githubactions #regular expression pattern: [\w+=,.@-]*
+          role-session-name: githubactions
           aws-region: eu-central-1
 
       - name: Configure AWS credentials for live
