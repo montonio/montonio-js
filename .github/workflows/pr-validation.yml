@@ -62,7 +62,7 @@ jobs:
           # Always check if clean version exists
           if npm view @montonio/montonio-js@$CURRENT_VERSION version 2>/dev/null; then
             echo "❌ Error: Version $CURRENT_VERSION already exists on NPM!"
-            echo "Please bump the version number using 'npm version patch' (or 'minor' or 'major')."
+            echo "Please bump the version number using 'npm version patch --no-git-tag-version' (or 'minor' or 'major')."
             exit 1
           fi
 
@@ -71,7 +71,7 @@ jobs:
             echo "Prelive version: $PRELIVE_VERSION"
             if npm view @montonio/montonio-js@$PRELIVE_VERSION version 2>/dev/null; then
               echo "❌ Error: Prelive version $PRELIVE_VERSION already exists on NPM!"
-              echo "Please bump the version number using 'npm version patch' (or 'minor' or 'major')."
+              echo "Please bump the version number using 'npm version patch --no-git-tag-version' (or 'minor' or 'major')."
               exit 1
             fi
             echo "✅ Version availability check passed - neither $CURRENT_VERSION nor $PRELIVE_VERSION exist on NPM"
