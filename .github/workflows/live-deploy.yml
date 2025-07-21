@@ -65,7 +65,7 @@ jobs:
       - name: Upload UMD files to S3
         run: |
           # Define S3 bucket and paths
-          S3_BUCKET="${{ secrets.S3_BUCKET }}"
+          S3_BUCKET="${{ vars.S3_BUCKET }}"
           MAJOR_PATH="${{ steps.version.outputs.major_version }}.x.x/"
           PATCH_PATH="${{ steps.version.outputs.version }}/"
 
