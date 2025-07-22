@@ -1,4 +1,4 @@
-import { Messages, MessageSubscription, MessageTypeEnum, MessageByType } from './types';
+import { MessageByType, Messages, MessageSubscription, MessageTypeEnum } from './types';
 import { Iframe } from '../../components/Iframe/Iframe';
 
 /**
@@ -156,7 +156,7 @@ export class MessagingService {
                     return;
                 }
 
-                const message = event.data as Messages;
+                const message = event.data;
 
                 // Find all matching subscriptions
                 this.subscriptions.forEach((subscription) => {
