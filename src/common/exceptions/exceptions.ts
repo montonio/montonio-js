@@ -1,4 +1,4 @@
-import { PaymentFailedMessageData } from '../../services/Messaging/types';
+import { PaymentFailedMessageData } from '../../services/Messaging';
 
 export class MontonioCheckoutNotInitializedError extends Error {
     constructor(

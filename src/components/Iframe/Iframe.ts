@@ -1,5 +1,5 @@
 import { IframeOptions } from './types';
-import { CheckoutHeightChangedMessage, MessageData, MessageTypeEnum } from '../../services/Messaging/types';
+import { Messages, MessageTypeEnum, MessageByType } from '../../services/Messaging/types';
 import { MessagingService } from '../../services';
 
 /**
@@ -103,7 +103,7 @@ export class Iframe {
      * @param timeout Timeout in milliseconds
      * @returns Promise that resolves when the message is received or rejects on timeout
      */
-    public waitForMessage<T extends MessageData = MessageData>(messageType: T['name'], timeout = 10000): Promise<T> {
+    public waitForMessage<T extends MessageTypeEnum>(messageType: T, timeout = 10000): Promise<MessageByType<T>> {
         const contentWindow = this.element.contentWindow;
         if (!contentWindow) {
             throw new Error('Iframe contentWindow is not available. Make sure the iframe is mounted and loaded.');
@@ -117,7 +117,7 @@ export class Iframe {
      * @param messageType The message type to listen for
      * @param handler Handler function to call when the message is received
      */
-    public subscribe<T extends MessageData = MessageData>(messageType: T['name'], handler: (message: T) => void): void {
+    public subscribe<T extends MessageTypeEnum>(messageType: T, handler: (message: MessageByType<T>) => void): void {
         const contentWindow = this.element.contentWindow;
         if (!contentWindow) {
             throw new Error('Iframe contentWindow is not available. Make sure the iframe is mounted and loaded.');
@@ -130,7 +130,7 @@ export class Iframe {
     /**
      * Post a message to the child iframe
      */
-    public postMessage<T extends MessageData>(messageData: T, targetOrigin: string = '*'): void {
+    public postMessage<T extends Messages>(messageData: T, targetOrigin: string = '*'): void {
         if (!this.element.contentWindow) {
             throw new Error('Iframe is not available. Make sure the iframe is mounted and loaded.');
         }
@@ -139,7 +139,7 @@ export class Iframe {
     }
 
     public startResizing(element: HTMLIFrameElement) {
-        this.subscribe<CheckoutHeightChangedMessage>(MessageTypeEnum.CHECKOUT_HEIGHT_CHANGED, (message) => {
+        this.subscribe(MessageTypeEnum.CHECKOUT_HEIGHT_CHANGED, (message) => {
             element.style.height = message.payload.height + 'px';
         });
     }
