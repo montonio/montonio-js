@@ -1,4 +1,4 @@
-import { MessageData, MessageSubscription, MessageTypeEnum } from './types';
+import { MessageByType, Messages, MessageSubscription, MessageTypeEnum } from './types';
 import { Iframe } from '../../components/Iframe/Iframe';
 
 /**
@@ -29,9 +29,9 @@ export class MessagingService {
      * @param sources Array of specific iframe windows or Iframe objects to listen to
      * @returns Subscription ID that can be used to unsubscribe
      */
-    public subscribe<T extends MessageData = MessageData>(
-        messageType: MessageTypeEnum,
-        handler: (message: T) => void,
+    public subscribe<T extends MessageTypeEnum>(
+        messageType: T,
+        handler: (message: MessageByType<T>) => void,
         sources: Window[] | Iframe[],
     ): string {
         const subscriptionId = `sub_${++this.subscriptionCounter}`;
@@ -42,7 +42,7 @@ export class MessagingService {
         this.subscriptions.set(subscriptionId, {
             id: subscriptionId,
             messageType,
-            handler: handler as (message: MessageData) => void,
+            handler: handler as (message: Messages) => void,
             sources: windowSources,
         });
 
@@ -79,11 +79,11 @@ export class MessagingService {
      * @param timeout Timeout in milliseconds
      * @returns Promise that resolves when the message is received or rejects on timeout
      */
-    public waitForMessage<T extends MessageData = MessageData>(
-        messageType: MessageTypeEnum,
+    public waitForMessage<T extends MessageTypeEnum>(
+        messageType: T,
         sources: Window[] | Iframe[],
         timeout = 10000,
-    ): Promise<T> {
+    ): Promise<MessageByType<T>> {
         return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
                 this.unsubscribe(subscriptionId);
@@ -92,7 +92,7 @@ export class MessagingService {
 
             const subscriptionId = this.subscribe<T>(
                 messageType,
-                (message: T) => {
+                (message: MessageByType<T>) => {
                     clearTimeout(timeoutId);
                     this.unsubscribe(subscriptionId);
                     resolve(message);
@@ -105,7 +105,7 @@ export class MessagingService {
     /**
      * Post a message to a specific iframe window
      */
-    public postMessage(target: Window, messageData: MessageData, targetOrigin: string = '*'): void {
+    public postMessage(target: Window, messageData: Messages, targetOrigin: string = '*'): void {
         if (!target) {
             throw new Error('Target window is not available.');
         }
@@ -156,7 +156,7 @@ export class MessagingService {
                     return;
                 }
 
-                const message = event.data as MessageData;
+                const message = event.data;
 
                 // Find all matching subscriptions
                 this.subscriptions.forEach((subscription) => {
