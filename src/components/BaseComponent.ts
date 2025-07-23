@@ -5,11 +5,12 @@ export abstract class BaseComponent {
     protected http: HTTPService;
     protected config: ConfigService;
     protected messaging: MessagingService;
-    protected iframe: Iframe | null = null;
     protected mountElement: HTMLElement | null = null;
-    public loaded: boolean = false;
+    protected loaded: boolean = false;
 
-    constructor() {
+    private _iframe: Iframe | null = null;
+
+    protected constructor() {
         this.http = HTTPService.getInstance();
         this.config = ConfigService.getInstance();
         this.messaging = MessagingService.getInstance();
@@ -17,18 +18,18 @@ export abstract class BaseComponent {
 
     public abstract initialize(...args: unknown[]): Promise<unknown>;
 
-    public destroy(): void {
-        this.cleanup();
-    }
-
-    public getIframe(): Iframe {
-        if (!this.iframe) {
+    public get iframe(): Iframe {
+        if (!this._iframe) {
             throw new Error('Iframe not initialized');
         }
-        return this.iframe;
+        return this._iframe;
     }
 
-    protected cleanup(): void {
+    protected set iframe(value: Iframe | null) {
+        this._iframe = value;
+    }
+
+    public cleanup(): void {
         if (this.iframe) {
             this.iframe.unmount();
             this.iframe = null;

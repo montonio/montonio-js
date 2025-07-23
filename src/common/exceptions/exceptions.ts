@@ -18,6 +18,13 @@ export class PaymentAuthNotInitializedError extends Error {
     }
 }
 
+export class ValidationError extends Error {
+    constructor() {
+        super('Validation failed');
+        this.name = 'ValidationError';
+    }
+}
+
 export class PaymentFailedError extends Error {
     paymentFailedMessageData: PaymentFailedMessageData;
 
