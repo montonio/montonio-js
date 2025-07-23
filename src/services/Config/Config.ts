@@ -5,8 +5,8 @@ import { EnvironmentOptions, EnvironmentVariables } from './types';
  * Implemented as a singleton
  */
 export class ConfigService {
-    private static instance: ConfigService;
-    private environmentVariables: EnvironmentVariables;
+    private static _instance: ConfigService;
+    private readonly environmentVariables: EnvironmentVariables;
 
     private constructor() {
         this.environmentVariables = {
@@ -20,11 +20,11 @@ export class ConfigService {
         };
     }
 
-    public static getInstance(): ConfigService {
-        if (!ConfigService.instance) {
-            ConfigService.instance = new ConfigService();
+    public static get instance(): ConfigService {
+        if (!ConfigService._instance) {
+            ConfigService._instance = new ConfigService();
         }
-        return ConfigService.instance;
+        return ConfigService._instance;
     }
 
     public getConfig(name: keyof EnvironmentVariables, environment: EnvironmentOptions): string {

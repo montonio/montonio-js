@@ -12,11 +12,9 @@ export abstract class BaseComponent {
 
     protected constructor() {
         this.http = HTTPService.getInstance();
-        this.config = ConfigService.getInstance();
-        this.messaging = MessagingService.getInstance();
+        this.config = ConfigService.instance;
+        this.messaging = MessagingService.instance;
     }
-
-    public abstract initialize(...args: unknown[]): Promise<unknown>;
 
     public get iframe(): Iframe {
         if (!this._iframe) {
@@ -35,4 +33,6 @@ export abstract class BaseComponent {
             this.iframe = null;
         }
     }
+
+    public abstract initialize(...args: unknown[]): Promise<unknown>;
 }

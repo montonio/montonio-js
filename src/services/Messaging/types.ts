@@ -1,8 +1,7 @@
 import { LocaleEnum } from '../../components/MontonioCheckout/types';
 
 export interface MessageSubscription {
-    id: string;
-    messageType: MessageTypeEnum;
+    // messageType: MessageTypeEnum;
     handler: (message: Messages) => void;
     sources: Window[];
 }

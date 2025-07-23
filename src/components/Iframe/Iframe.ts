@@ -14,13 +14,13 @@ export class Iframe {
     };
     private readonly resizeOnHeightChange: boolean;
     private messagingService: MessagingService;
-    private subscriptionIds: Set<string> = new Set();
+    // private subscriptions: Set<MessageTypeEnum> = new Set();
 
     constructor(options: IframeOptions) {
         this.options = options;
         this.resizeOnHeightChange = options.resizeOnHeightChange ?? true;
         this.element = document.createElement('iframe');
-        this.messagingService = MessagingService.getInstance();
+        this.messagingService = MessagingService.instance;
         this.setupIframe();
     }
 
@@ -33,7 +33,7 @@ export class Iframe {
     }
 
     public unmount(): void {
-        this.clearSubscriptions();
+        // this.clearSubscriptions();
 
         // Clear subscriptions by source if the iframe is loaded
         if (this.element.contentWindow) {
@@ -102,12 +102,13 @@ export class Iframe {
         this.messagingService.postMessage(this.element.contentWindow, messageData, targetOrigin);
     }
 
-    private clearSubscriptions(): void {
-        this.subscriptionIds.forEach((id) => {
-            this.messagingService.unsubscribe(id);
-        });
-        this.subscriptionIds.clear();
-    }
+    // private clearSubscriptions(): void {
+    //     this.messagingService.clearSubscriptionsForSource(this.getContentWindow());
+    // this.subscriptions.forEach((key) => {
+    //     this.messagingService.unsubscribe(key);
+    // });
+    // this.subscriptions.clear();
+    // }
 
     private startResizing(element: HTMLIFrameElement) {
         this.subscribe(MessageTypeEnum.CHECKOUT_HEIGHT_CHANGED, (message) => {
@@ -126,9 +127,9 @@ export class Iframe {
         if (!contentWindow) {
             throw new Error('Iframe contentWindow is not available. Make sure the iframe is mounted and loaded.');
         }
-        const subscriptionId = this.messagingService.subscribe<T>(messageType, handler, [contentWindow]);
+        this.messagingService.subscribe<T>(messageType, handler, [contentWindow]);
 
-        this.subscriptionIds.add(subscriptionId);
+        // this.subscriptions.add(messageType);
     }
 
     private setupIframe(): void {
