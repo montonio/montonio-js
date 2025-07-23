@@ -1,10 +1,4 @@
-import {
-    CheckoutOptions,
-    GatewayUrlResponse,
-    PaymentResult,
-    ReturnUrlResponse,
-    UpdatableCheckoutOptions,
-} from './types';
+import { CheckoutOptions, GatewayUrlResponse, PaymentResult, ReturnUrlResponse } from './types';
 import { Iframe } from '../Iframe/Iframe';
 import { PaymentAuth } from '../PaymentAuth/PaymentAuth';
 import { BaseComponent } from '../BaseComponent';
@@ -24,6 +18,7 @@ export class MontonioCheckout extends BaseComponent {
         completedId: '',
         failedId: '',
         authId: '',
+        validationFailedId: '',
     };
 
     constructor(options: CheckoutOptions) {
@@ -41,7 +36,6 @@ export class MontonioCheckout extends BaseComponent {
             this.mountElement = getElement(mountTo);
 
             const sessionData = await this.fetchSession();
-            console.log('SDK: sessionData from Stargate', sessionData);
             this.iframe = new Iframe({
                 src: sessionData.url,
                 mountElement: this.mountElement,
@@ -58,25 +52,25 @@ export class MontonioCheckout extends BaseComponent {
 
             return true;
         } catch (error) {
-            this.cleanupIframe();
+            this.cleanup();
             throw error;
         }
     }
 
-    public updateOptions(options: UpdatableCheckoutOptions): void {
-        if (!this.loaded) {
-            throw new MontonioCheckoutNotInitializedError();
-        }
-
-        if (options.locale !== undefined) {
-            this.options.locale = options.locale;
-
-            this.iframe.postMessage({
-                name: MessageTypeEnum.CHECKOUT_CHANGE_LOCALE,
-                payload: { locale: options.locale },
-            });
-        }
-    }
+    // public updateOptions(options: UpdatableCheckoutOptions): void {
+    //     if (!this.loaded) {
+    //         throw new MontonioCheckoutNotInitializedError();
+    //     }
+    //
+    //     if (options.locale !== undefined) {
+    //         this.options.locale = options.locale;
+    //
+    //         this.iframe.postMessage({
+    //             name: MessageTypeEnum.CHECKOUT_CHANGE_LOCALE,
+    //             payload: { locale: options.locale },
+    //         });
+    //     }
+    // }
 
     public async validateOrReject(): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -85,8 +79,9 @@ export class MontonioCheckout extends BaseComponent {
                 .then((res) => {
                     if (res.payload.isValid) {
                         resolve();
+                    } else {
+                        reject(new ValidationError());
                     }
-                    reject(new ValidationError());
                 })
                 .catch(() => reject(new ValidationError()));
 
@@ -131,6 +126,19 @@ export class MontonioCheckout extends BaseComponent {
 
                     // Reject the promise to the SDK user
                     reject(new PaymentFailedError(failedMessage.payload));
+                    this.cleanupAfterPaymentSubmission();
+                },
+                [this.iframe],
+            );
+
+            // Handler for validation errors
+            this.submitPaymentSubscriptions.validationFailedId = this.messaging.subscribe(
+                MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT,
+                (res) => {
+                    console.log('CHECKOUT_VALIDATE_FIELDS_RESULT', res);
+                    if (!res.payload.isValid) {
+                        reject(new ValidationError());
+                    }
                     this.cleanupAfterPaymentSubmission();
                 },
                 [this.iframe],
@@ -227,11 +235,6 @@ export class MontonioCheckout extends BaseComponent {
         this.messaging.unsubscribe(this.submitPaymentSubscriptions.authId);
 
         this.cleanupPaymentAuth();
-    }
-
-    private cleanupIframe(): void {
-        this.cleanupPaymentAuth();
-        this.cleanup();
     }
 
     private cleanupPaymentAuth(): void {

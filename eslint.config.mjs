@@ -66,6 +66,7 @@ export default [
             },
         },
         rules: {
+            '@typescript-eslint/member-ordering': 'error',
             'no-dupe-class-members': 'off',
             '@typescript-eslint/no-explicit-any': 'error',
             '@typescript-eslint/explicit-function-return-type': 'off',

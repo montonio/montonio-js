@@ -34,7 +34,7 @@ export class MessagingService {
         handler: (message: MessageByType<T>) => void,
         sources: Window[] | Iframe[],
     ): string {
-        const subscriptionId = `sub_${++this.subscriptionCounter}`;
+        const subscriptionId = String(++this.subscriptionCounter);
 
         // Convert Iframe objects to Window objects
         const windowSources = this.extractWindowSources(sources);
