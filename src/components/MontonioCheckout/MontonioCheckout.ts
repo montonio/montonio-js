@@ -145,8 +145,8 @@ export class MontonioCheckout extends BaseComponent {
                     console.log('CHECKOUT_VALIDATE_FIELDS_RESULT', res);
                     if (!res.payload.isValid) {
                         reject(new ValidationError());
+                        this.cleanupAfterPaymentSubmission();
                     }
-                    this.cleanupAfterPaymentSubmission();
                 },
                 [this.getIframe()],
             );
