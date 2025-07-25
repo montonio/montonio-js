@@ -10,8 +10,8 @@ import { PaymentAuth } from '../PaymentAuth/PaymentAuth';
 import { BaseComponent } from '../BaseComponent';
 import { getElement } from '../../utils';
 import { Environment, EnvironmentOptions } from '../../services/Config/types';
-import { MessageTypeEnum, MessageByType } from '../../services/Messaging';
-import { MontonioCheckoutNotInitializedError, PaymentFailedError } from '../../common';
+import { MessageByType, MessageTypeEnum } from '../../services/Messaging';
+import { MontonioCheckoutNotInitializedError, PaymentFailedError, ValidationError } from '../../common';
 
 export class MontonioCheckout extends BaseComponent {
     private options: CheckoutOptions;
@@ -24,6 +24,7 @@ export class MontonioCheckout extends BaseComponent {
         completedId: '',
         failedId: '',
         authId: '',
+        validateFieldsId: '',
     };
 
     constructor(options: CheckoutOptions) {
@@ -79,9 +80,22 @@ export class MontonioCheckout extends BaseComponent {
     }
 
     public async validateOrReject(): Promise<void> {
-        // TODO: Temporary rule disable: the method will later have more awaitable things
-        // eslint-disable-next-line @typescript-eslint/await-thenable
-        return await console.log('Payment form validation not implemented yet');
+        return new Promise((resolve, reject) => {
+            this.getIframe()
+                .waitForMessage(MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT)
+                .then((res) => {
+                    if (res.payload.isValid) {
+                        resolve();
+                    } else {
+                        reject(new ValidationError());
+                    }
+                })
+                .catch(() => reject(new ValidationError()));
+
+            this.getIframe().postMessage({
+                name: MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS,
+            });
+        });
     }
 
     public async submitPayment(): Promise<PaymentResult> {
@@ -119,6 +133,19 @@ export class MontonioCheckout extends BaseComponent {
 
                     // Reject the promise to the SDK user
                     reject(new PaymentFailedError(failedMessage.payload));
+                    this.cleanupAfterPaymentSubmission();
+                },
+                [this.getIframe()],
+            );
+
+            // Handler for validation errors
+            this.submitPaymentSubscriptions.validateFieldsId = this.messaging.subscribe(
+                MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT,
+                (res) => {
+                    console.log('CHECKOUT_VALIDATE_FIELDS_RESULT', res);
+                    if (!res.payload.isValid) {
+                        reject(new ValidationError());
+                    }
                     this.cleanupAfterPaymentSubmission();
                 },
                 [this.getIframe()],
@@ -213,6 +240,7 @@ export class MontonioCheckout extends BaseComponent {
         this.messaging.unsubscribe(this.submitPaymentSubscriptions.completedId);
         this.messaging.unsubscribe(this.submitPaymentSubscriptions.failedId);
         this.messaging.unsubscribe(this.submitPaymentSubscriptions.authId);
+        this.messaging.unsubscribe(this.submitPaymentSubscriptions.validateFieldsId);
 
         this.cleanupPaymentAuth();
     }
