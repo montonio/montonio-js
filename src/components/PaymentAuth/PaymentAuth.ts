@@ -44,10 +44,10 @@ export class PaymentAuth extends BaseComponent {
         this.iframe.mount();
 
         // Wait for the payment auth component to be ready
-        await this.iframe.waitForMessage(MessageTypeEnum.CHECKOUT_PAYMENT_AUTH_COMPONENT_READY);
+        await this.messaging.waitForMessage(MessageTypeEnum.CHECKOUT_PAYMENT_AUTH_COMPONENT_READY, this.iframe);
 
         // Submit payment auth data to the payment auth iframe
-        this.iframe.postMessage({
+        this.messaging.postMessage(this.iframe, {
             name: MessageTypeEnum.CHECKOUT_SEND_PAYMENT_AUTH_DATA,
             payload: {
                 paymentAuthData: this.options.paymentAuthData,
