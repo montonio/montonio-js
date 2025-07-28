@@ -5,7 +5,7 @@
  */
 export class HTTPService {
     private static _instance: HTTPService;
-    private readonly timeout = 10000;
+    private readonly timeout = 30000;
 
     private constructor() {}
 

@@ -81,8 +81,8 @@ export class PaymentAuth extends BaseComponent {
         document.body.appendChild(form);
         form.submit();
 
-        // the redirect should happen within 10 seconds, if it doesn't, throw an error
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        throw new Error('Redirect timeout: Expected redirect to occur within 10 seconds');
+        // the redirect should happen within 30 seconds, if it doesn't, throw an error
+        await new Promise((resolve) => setTimeout(resolve, 30000));
+        throw new Error('Redirect timeout: Expected redirect to occur within 30 seconds');
     }
 }

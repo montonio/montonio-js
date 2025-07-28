@@ -69,7 +69,7 @@ export class MessagingService {
     public waitForMessage<T extends MessageTypeEnum>(
         messageType: T,
         iframe: Iframe,
-        timeout = 10000,
+        timeout = 30000,
     ): Promise<MessageByType<T>> {
         return new Promise((resolve, reject) => {
             // Timeout to remove subscription and reject promise
