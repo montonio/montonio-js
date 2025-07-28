@@ -1,5 +1,5 @@
 import { MessageByType, Messages, MessageSubscription, MessageTypeEnum } from './types';
-import { Iframe } from '../../components/Iframe/Iframe';
+import { Iframe } from '../../components';
 
 /**
  * Service for sending and receiving messages between iframes.
@@ -7,9 +7,11 @@ import { Iframe } from '../../components/Iframe/Iframe';
  * to clearly separate message subscriptions for each component.
  */
 export class MessagingService {
-    // Each type can have only one handler function but multiple source windows
-    // For example, the payment complete message can be listened to from
-    // both the MontonioCheckout component and the PaymentAuth (3DS) component
+    /**
+     * Each message type can have only one handler function but multiple source windows.
+     * For example, the "payment complete" message can be listened to from both the MontonioCheckout
+     * component and the PaymentAuth (3DS) component - handled by the same callback.
+     */
     private subscriptions: Map<MessageTypeEnum, MessageSubscription> = new Map();
 
     public constructor() {
@@ -17,7 +19,7 @@ export class MessagingService {
     }
 
     /**
-     * Subscribe to messages of a specific type from a specific iframe
+     * Subscribe to messages of a specific type from a specific source iframe
      * @param messageType The message type to listen for
      * @param handler Handler function to call when the message is received
      * @param iframe Iframe object to listen to
@@ -58,9 +60,9 @@ export class MessagingService {
     }
 
     /**
-     * Wait for a specific message type from specific sources
+     * Wait for a specific message type from a specific source Iframe
      * @param messageType The message type to wait for
-     * @param sources Array of specific iframe windows or Iframe objects to listen to
+     * @param iframe Iframe object to listen to
      * @param timeout Timeout in milliseconds
      * @returns Promise that resolves when the message is received or rejects on timeout
      */
@@ -70,11 +72,16 @@ export class MessagingService {
         timeout = 10000,
     ): Promise<MessageByType<T>> {
         return new Promise((resolve, reject) => {
+            // Timeout to remove subscription and reject promise
             const timeoutId = setTimeout(() => {
                 this.removeIframeFromSubscription(messageType, iframe);
                 reject(new Error(`Message ${messageType} timeout after ${timeout}ms`));
             }, timeout);
 
+            /**
+             * Add the temporary subscription which will be immediately cleared
+             * by the handler function upon receiving the message
+             */
             this.subscribe<T>(
                 messageType,
                 (message: MessageByType<T>) => {
@@ -116,8 +123,8 @@ export class MessagingService {
         });
 
         // Remove subscriptions that have no sources left
-        subscriptionsToRemove.forEach((id) => {
-            this.subscriptions.delete(id);
+        subscriptionsToRemove.forEach((type) => {
+            this.subscriptions.delete(type);
         });
     }
 
@@ -141,6 +148,7 @@ export class MessagingService {
 
         subscription.sources = subscription.sources.filter((source) => source !== windowSource);
 
+        // Delete the subscription if it has no sources left
         if (subscription.sources.length === 0) {
             this.subscriptions.delete(messageType);
         }
@@ -152,14 +160,14 @@ export class MessagingService {
     private setupMessageListener(): void {
         window.addEventListener('message', (event) => {
             try {
-                // Validate that the message is properly formatted
+                // Validate that the message is properly formatted to filter out noise
                 if (!event.data || typeof event.data !== 'object' || !event.data.name) {
                     return;
                 }
 
                 const message = event.data;
 
-                // Find all matching subscriptions
+                // Find the matching subscriptions and call their handler
                 this.subscriptions.forEach((subscription, key) => {
                     // Check if message type matches
                     if (key !== message.name) {
@@ -186,9 +194,7 @@ export class MessagingService {
     }
 
     /**
-     * Extract the window source from our Iframe class
-     * @param iframe Iframe object to extract the window source from
-     * @returns Window object
+     * Extract the window source from the Iframe object
      */
     private extractWindowFromIframe(iframe: Iframe): Window {
         return iframe.getContentWindow();

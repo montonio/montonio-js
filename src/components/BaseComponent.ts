@@ -1,4 +1,4 @@
-import { Iframe } from './Iframe/Iframe';
+import { Iframe } from './';
 import { ConfigService, HTTPService, MessagingService } from '../services';
 
 export abstract class BaseComponent {
