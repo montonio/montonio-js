@@ -54,6 +54,9 @@ export class Iframe {
         return this.element.contentWindow;
     }
 
+    /**
+     * Listen to height change messages from the child window and change the height of the iframe element
+     */
     private startResizing(element: HTMLIFrameElement) {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_HEIGHT_CHANGED,

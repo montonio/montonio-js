@@ -2,10 +2,14 @@ import { MessageByType, Messages, MessageSubscription, MessageTypeEnum } from '.
 import { Iframe } from '../../components/Iframe/Iframe';
 
 /**
- * Service for sending and receiving messages between iframes
- * Implemented as a singleton
+ * Service for sending and receiving messages between iframes.
+ * Meant to be initialized separately for each component
+ * to clearly separate message subscriptions for each component.
  */
 export class MessagingService {
+    // Each type can have only one handler function but multiple source windows
+    // For example, the payment complete message can be listened to from
+    // both the MontonioCheckout component and the PaymentAuth (3DS) component
     private subscriptions: Map<MessageTypeEnum, MessageSubscription> = new Map();
 
     public constructor() {
@@ -53,10 +57,6 @@ export class MessagingService {
         }
     }
 
-    public unsubscribe(messageType: MessageTypeEnum): void {
-        this.subscriptions.delete(messageType);
-    }
-
     /**
      * Wait for a specific message type from specific sources
      * @param messageType The message type to wait for
@@ -71,7 +71,7 @@ export class MessagingService {
     ): Promise<MessageByType<T>> {
         return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
-                this.unsubscribe(messageType);
+                this.removeIframeFromSubscription(messageType, iframe);
                 reject(new Error(`Message ${messageType} timeout after ${timeout}ms`));
             }, timeout);
 
@@ -79,7 +79,7 @@ export class MessagingService {
                 messageType,
                 (message: MessageByType<T>) => {
                     clearTimeout(timeoutId);
-                    this.unsubscribe(messageType);
+                    this.removeIframeFromSubscription(messageType, iframe);
                     resolve(message);
                 },
                 iframe,
@@ -126,6 +126,24 @@ export class MessagingService {
      */
     public clearAllSubscriptions(): void {
         this.subscriptions.clear();
+    }
+
+    /**
+     * Remove subscription for an iframe
+     */
+    private removeIframeFromSubscription(messageType: MessageTypeEnum, iframe: Iframe): void {
+        const subscription = this.subscriptions.get(messageType);
+        if (!subscription) {
+            throw new Error(`Subscription for '${messageType}' not found`);
+        }
+
+        const windowSource = this.extractWindowFromIframe(iframe);
+
+        subscription.sources = subscription.sources.filter((source) => source !== windowSource);
+
+        if (subscription.sources.length === 0) {
+            this.subscriptions.delete(messageType);
+        }
     }
 
     /**
