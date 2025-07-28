@@ -53,6 +53,10 @@ export class MontonioCheckout extends BaseComponent {
         }
     }
 
+    /**
+     * Update the options of the MontonioCheckout instance
+     * @param options - Updatable options
+     */
     public updateOptions(options: UpdatableCheckoutOptions): void {
         if (!this.loaded) {
             throw new MontonioCheckoutNotInitializedError();
@@ -68,6 +72,9 @@ export class MontonioCheckout extends BaseComponent {
         }
     }
 
+    /**
+     * Check the validity of the payment form. Throws an error if the payment form is invalid.
+     */
     public async validateOrReject(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.messaging
@@ -87,6 +94,10 @@ export class MontonioCheckout extends BaseComponent {
         });
     }
 
+    /**
+     * Submit the payment. Call this after creating the Order with the Montonio backend API
+     * @returns Promise that resolves to a PaymentResult
+     */
     public async submitPayment(): Promise<PaymentResult> {
         if (!this.loaded) {
             throw new MontonioCheckoutNotInitializedError();
