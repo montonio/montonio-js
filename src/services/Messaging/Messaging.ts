@@ -103,32 +103,6 @@ export class MessagingService {
     }
 
     /**
-     * Clear all subscriptions for a specific source (useful when unmounting an iframe)
-     */
-    public clearSubscriptionsForIframe(iframe: Iframe): void {
-        const source = this.extractWindowFromIframe(iframe);
-
-        const subscriptionsToRemove: MessageTypeEnum[] = [];
-
-        this.subscriptions.forEach((subscription, key) => {
-            if (subscription.sources.includes(source)) {
-                // Remove the specific source from the subscription
-                subscription.sources = subscription.sources.filter((s) => s !== source);
-
-                // If no sources left, mark subscription for removal
-                if (subscription.sources.length === 0) {
-                    subscriptionsToRemove.push(key);
-                }
-            }
-        });
-
-        // Remove subscriptions that have no sources left
-        subscriptionsToRemove.forEach((type) => {
-            this.subscriptions.delete(type);
-        });
-    }
-
-    /**
      * Clear all subscriptions
      */
     public clearAllSubscriptions(): void {

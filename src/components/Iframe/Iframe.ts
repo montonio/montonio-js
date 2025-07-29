@@ -36,7 +36,7 @@ export class Iframe {
         // Currently this only clears the resize subscription because that's the only subscription
         // on the MessagingService instance created in this Iframe instance
         if (this.element.contentWindow) {
-            this.messagingService.clearSubscriptionsForIframe(this);
+            this.messagingService.clearAllSubscriptions();
         }
 
         if (this.element.parentNode) {
