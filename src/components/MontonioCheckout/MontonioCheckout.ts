@@ -42,7 +42,7 @@ export class MontonioCheckout extends BaseComponent {
             });
             this.iframe.mount();
 
-            await this.messaging.waitForMessage(MessageTypeEnum.CHECKOUT_PAYMENT_COMPONENT_READY, this.iframe);
+            await this.messagingService.waitForMessage(MessageTypeEnum.CHECKOUT_PAYMENT_COMPONENT_READY, this.iframe);
 
             this.loaded = true;
 
@@ -65,7 +65,7 @@ export class MontonioCheckout extends BaseComponent {
         if (options.locale !== undefined) {
             this.options.locale = options.locale;
 
-            this.messaging.postMessage(this.iframe, {
+            this.messagingService.postMessage(this.iframe, {
                 name: MessageTypeEnum.CHECKOUT_CHANGE_LOCALE,
                 payload: { locale: options.locale },
             });
@@ -77,7 +77,7 @@ export class MontonioCheckout extends BaseComponent {
      */
     public async validateOrReject(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.messaging
+            this.messagingService
                 .waitForMessage(MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT, this.iframe)
                 .then((res) => {
                     if (res.payload.isValid) {
@@ -88,7 +88,7 @@ export class MontonioCheckout extends BaseComponent {
                 })
                 .catch(() => reject(new ValidationError()));
 
-            this.messaging.postMessage(this.iframe, {
+            this.messagingService.postMessage(this.iframe, {
                 name: MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS,
             });
         });
@@ -105,7 +105,7 @@ export class MontonioCheckout extends BaseComponent {
 
         return new Promise((resolve, reject) => {
             // Handler for payment completion
-            this.messaging.subscribe(
+            this.messagingService.subscribe(
                 MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
                 async (completedMessage) => {
                     console.log('CHECKOUT_PAYMENT_COMPLETED (from main iframe)', completedMessage);
@@ -120,13 +120,13 @@ export class MontonioCheckout extends BaseComponent {
             );
 
             // Handler for payment failure
-            this.messaging.subscribe(
+            this.messagingService.subscribe(
                 MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
                 (failedMessage) => {
                     console.error('CHECKOUT_PAYMENT_FAILED (from main iframe)', failedMessage);
 
                     // Send error message to the main iframe to be displayed above the payment form
-                    this.messaging.postMessage(this.iframe, {
+                    this.messagingService.postMessage(this.iframe, {
                         name: MessageTypeEnum.CHECKOUT_SEND_PAYMENT_FAILED_DATA,
                         payload: failedMessage.payload,
                     });
@@ -139,7 +139,7 @@ export class MontonioCheckout extends BaseComponent {
             );
 
             // Handler for validation errors
-            this.messaging.subscribe(
+            this.messagingService.subscribe(
                 MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT,
                 (res) => {
                     console.log('CHECKOUT_VALIDATE_FIELDS_RESULT', res);
@@ -151,7 +151,7 @@ export class MontonioCheckout extends BaseComponent {
             );
 
             // Handler for Payment Auth (3DS) in case it is requested by the main iframe
-            this.messaging.subscribe(
+            this.messagingService.subscribe(
                 MessageTypeEnum.CHECKOUT_START_PAYMENT_AUTH,
                 async (message) => {
                     try {
@@ -166,11 +166,11 @@ export class MontonioCheckout extends BaseComponent {
                         // Add the PaymentAuth iframe to existing subscriptions
                         // to get completion/failure messages also from PaymentAuth iframe
                         const paymentAuthIframe = this.paymentAuth.iframe;
-                        this.messaging.addIframeToSubscription(
+                        this.messagingService.addIframeToSubscription(
                             MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
                             paymentAuthIframe,
                         );
-                        this.messaging.addIframeToSubscription(
+                        this.messagingService.addIframeToSubscription(
                             MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
                             paymentAuthIframe,
                         );
@@ -184,20 +184,20 @@ export class MontonioCheckout extends BaseComponent {
             );
 
             // Submit the payment
-            this.messaging.postMessage(this.iframe, {
+            this.messagingService.postMessage(this.iframe, {
                 name: MessageTypeEnum.CHECKOUT_SUBMIT_PAYMENT,
             });
         });
     }
 
     private async fetchSession(): Promise<GatewayUrlResponse> {
-        const baseUrl = this.config.getConfig('stargateUrl', this.environment);
+        const baseUrl = this.configService.getConfig('stargateUrl', this.environment);
 
         const url = `${baseUrl}/api/sessions/${this.options.sessionUuid}/gateway-url${
             this.options.locale ? `?preferredLocale=${this.options.locale}` : ''
         }`;
 
-        return await this.http.get<GatewayUrlResponse>(url);
+        return await this.httpService.get<GatewayUrlResponse>(url);
     }
 
     /**
@@ -207,7 +207,7 @@ export class MontonioCheckout extends BaseComponent {
     private async handlePaymentCompletedMessage(
         paymentCompletedMessage: MessageByType<MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED>,
     ): Promise<PaymentResult> {
-        const baseUrl = this.config.getConfig('stargateUrl', this.environment);
+        const baseUrl = this.configService.getConfig('stargateUrl', this.environment);
         const url = `${baseUrl}/api/payment-intents/${paymentCompletedMessage.payload.paymentIntentUuid}/return-url`;
         const MAX_ATTEMPTS = 10;
         const DELAY_BETWEEN_ATTEMPTS_IN_MS = 1000;
@@ -215,7 +215,7 @@ export class MontonioCheckout extends BaseComponent {
 
         while (attempts < MAX_ATTEMPTS) {
             try {
-                const result = await this.http.get<ReturnUrlResponse>(url);
+                const result = await this.httpService.get<ReturnUrlResponse>(url);
                 attempts++;
                 if (result?.merchantReturnUrl) {
                     return {
@@ -236,7 +236,7 @@ export class MontonioCheckout extends BaseComponent {
     }
 
     private cleanupAfterPaymentSubmission(): void {
-        this.messaging.clearAllSubscriptions();
+        this.messagingService.clearAllSubscriptions();
 
         this.cleanupPaymentAuth();
     }

@@ -32,8 +32,7 @@ export class Iframe {
     }
 
     public unmount(): void {
-        // Clear subscriptions by source if iframe is loaded
-        // Currently this only clears the resize subscription because that's the only subscription
+        // This only clears the resize subscription because that's the only subscription
         // on the MessagingService instance created in this Iframe instance
         if (this.element.contentWindow) {
             this.messagingService.clearAllSubscriptions();
