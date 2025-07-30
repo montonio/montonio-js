@@ -44,10 +44,10 @@ export class PaymentAuth extends BaseComponent {
         this.iframe.mount();
 
         // Wait for the payment auth component to be ready
-        await this.iframe.waitForMessage(MessageTypeEnum.CHECKOUT_PAYMENT_AUTH_COMPONENT_READY);
+        await this.messagingService.waitForMessage(MessageTypeEnum.CHECKOUT_PAYMENT_AUTH_COMPONENT_READY, this.iframe);
 
         // Submit payment auth data to the payment auth iframe
-        this.iframe.postMessage({
+        this.messagingService.postMessage(this.iframe, {
             name: MessageTypeEnum.CHECKOUT_SEND_PAYMENT_AUTH_DATA,
             payload: {
                 paymentAuthData: this.options.paymentAuthData,
@@ -81,8 +81,8 @@ export class PaymentAuth extends BaseComponent {
         document.body.appendChild(form);
         form.submit();
 
-        // the redirect should happen within 10 seconds, if it doesn't, throw an error
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        throw new Error('Redirect timeout: Expected redirect to occur within 10 seconds');
+        // the redirect should happen within 30 seconds, if it doesn't, throw an error
+        await new Promise((resolve) => setTimeout(resolve, 30000));
+        throw new Error('Redirect timeout: Expected redirect to occur within 30 seconds');
     }
 }

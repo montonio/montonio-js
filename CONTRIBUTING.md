@@ -21,7 +21,7 @@ To release a new version, code from `develop` branch should be merged as follows
 1. `develop` -> `prelive` to release the prelive version
 2. `prelive` -> `live` to release the live version
 
-The release process for each environment is automated by Github Actions and will be triggered upon merging to the respective branch.
+The release process for each environment is automated by GitHub Actions and will be triggered upon merging to the respective branch.
 
 **Important!** Before merging to `prelive`, make sure you have bumped the package version in `develop`. You can do this by running `npm version patch --no-git-tag-version`. This changes the version number in `package.json` and `package-lock.json`. For a minor or major version bump, use `npm version minor` or `npm version major` respectively.
 
