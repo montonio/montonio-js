@@ -82,6 +82,7 @@ export default [
             '@typescript-eslint/no-floating-promises': 'error',
             '@typescript-eslint/no-warning-comments': 'off',
             '@typescript-eslint/await-thenable': 'error',
+            '@typescript-eslint/member-ordering': 'error',
         },
     },
 ];

@@ -4,16 +4,16 @@
  * Implemented as a singleton
  */
 export class HTTPService {
-    private static instance: HTTPService;
-    private readonly timeout = 10000;
+    private static _instance: HTTPService;
+    private readonly timeout = 30000;
 
     private constructor() {}
 
-    public static getInstance(): HTTPService {
-        if (!HTTPService.instance) {
-            HTTPService.instance = new HTTPService();
+    public static get instance(): HTTPService {
+        if (!HTTPService._instance) {
+            HTTPService._instance = new HTTPService();
         }
-        return HTTPService.instance;
+        return HTTPService._instance;
     }
 
     public async get<T>(url: string): Promise<T> {

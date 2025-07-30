@@ -1,103 +1,95 @@
 import { MessageByType, Messages, MessageSubscription, MessageTypeEnum } from './types';
-import { Iframe } from '../../components/Iframe/Iframe';
+import { Iframe } from '../../components';
 
 /**
- * Service for sending and receiving messages between iframes
- * Implemented as a singleton
+ * Service for sending and receiving messages between iframes.
+ * Meant to be initialized separately for each component
+ * to clearly separate message subscriptions for each component.
  */
 export class MessagingService {
-    private static instance: MessagingService;
-    private subscriptions: Map<string, MessageSubscription> = new Map();
-    private globalListenerAttached = false;
-    private subscriptionCounter = 0;
+    /**
+     * Each message type can have only one handler function but multiple source windows.
+     * For example, the "payment complete" message can be listened to from both the MontonioCheckout
+     * component and the PaymentAuth (3DS) component - handled by the same callback.
+     */
+    private subscriptions: Map<MessageTypeEnum, MessageSubscription> = new Map();
 
-    private constructor() {
-        this.setupGlobalMessageListener();
-    }
-
-    public static getInstance(): MessagingService {
-        if (!MessagingService.instance) {
-            MessagingService.instance = new MessagingService();
-        }
-        return MessagingService.instance;
+    public constructor() {
+        this.setupMessageListener();
     }
 
     /**
-     * Subscribe to messages of a specific type from specific sources
+     * Subscribe to messages of a specific type from a specific source iframe
      * @param messageType The message type to listen for
      * @param handler Handler function to call when the message is received
-     * @param sources Array of specific iframe windows or Iframe objects to listen to
+     * @param iframe Iframe object to listen to
      * @returns Subscription ID that can be used to unsubscribe
      */
     public subscribe<T extends MessageTypeEnum>(
         messageType: T,
         handler: (message: MessageByType<T>) => void,
-        sources: Window[] | Iframe[],
-    ): string {
-        const subscriptionId = `sub_${++this.subscriptionCounter}`;
+        iframe: Iframe,
+    ): void {
+        if (this.subscriptions.has(messageType)) {
+            throw new Error(`Subscription for '${messageType}' already exists`);
+        }
 
-        // Convert Iframe objects to Window objects
-        const windowSources = this.extractWindowSources(sources);
+        // Convert Iframe object to Window object
+        const windowSource = this.extractWindowFromIframe(iframe);
 
-        this.subscriptions.set(subscriptionId, {
-            id: subscriptionId,
-            messageType,
+        this.subscriptions.set(messageType, {
             handler: handler as (message: Messages) => void,
-            sources: windowSources,
+            sources: [windowSource],
         });
-
-        return subscriptionId;
     }
 
     /**
-     * Add a source to an existing subscription
+     * Add an iframe to an existing subscription
      */
-    public addSourceToSubscription(subscriptionId: string, source: Window): boolean {
-        const subscription = this.subscriptions.get(subscriptionId);
+    public addIframeToSubscription(messageType: MessageTypeEnum, iframe: Iframe): void {
+        const subscription = this.subscriptions.get(messageType);
         if (!subscription) {
-            throw new Error(`Subscription with ID '${subscriptionId}' not found`);
+            throw new Error(`Subscription for '${messageType}' not found`);
         }
 
-        // Check if source already exists
-        if (subscription.sources.includes(source)) {
-            return false;
+        const windowSource = this.extractWindowFromIframe(iframe);
+
+        if (!subscription.sources.includes(windowSource)) {
+            subscription.sources.push(windowSource);
         }
-
-        // Add the source
-        subscription.sources.push(source);
-        return true;
-    }
-
-    public unsubscribe(subscriptionId: string): void {
-        this.subscriptions.delete(subscriptionId);
     }
 
     /**
-     * Wait for a specific message type from specific sources
+     * Wait for a specific message type from a specific source Iframe
      * @param messageType The message type to wait for
-     * @param sources Array of specific iframe windows or Iframe objects to listen to
+     * @param iframe Iframe object to listen to
      * @param timeout Timeout in milliseconds
      * @returns Promise that resolves when the message is received or rejects on timeout
      */
     public waitForMessage<T extends MessageTypeEnum>(
         messageType: T,
-        sources: Window[] | Iframe[],
-        timeout = 10000,
+        iframe: Iframe,
+        timeout = 30000,
     ): Promise<MessageByType<T>> {
         return new Promise((resolve, reject) => {
+            // Timeout to remove subscription and reject promise
             const timeoutId = setTimeout(() => {
-                this.unsubscribe(subscriptionId);
+                this.removeIframeFromSubscription(messageType, iframe);
                 reject(new Error(`Message ${messageType} timeout after ${timeout}ms`));
             }, timeout);
 
-            const subscriptionId = this.subscribe<T>(
+            /**
+             * Add the temporary subscription which will be immediately cleared
+             * by the handler function upon receiving the message
+             */
+            this.subscribe<T>(
                 messageType,
                 (message: MessageByType<T>) => {
                     clearTimeout(timeoutId);
-                    this.unsubscribe(subscriptionId);
+                    this.removeIframeFromSubscription(messageType, iframe);
                     resolve(message);
                 },
-                sources,
+                iframe,
             );
         });
     }
@@ -105,35 +97,9 @@ export class MessagingService {
     /**
      * Post a message to a specific iframe window
      */
-    public postMessage(target: Window, messageData: Messages, targetOrigin: string = '*'): void {
-        if (!target) {
-            throw new Error('Target window is not available.');
-        }
+    public postMessage(iframe: Iframe, messageData: Messages, targetOrigin: string = '*'): void {
+        const target = this.extractWindowFromIframe(iframe);
         target.postMessage(messageData, targetOrigin);
-    }
-
-    /**
-     * Clear all subscriptions for a specific source (useful when unmounting an iframe)
-     */
-    public clearSubscriptionsForSource(source: Window): void {
-        const subscriptionsToRemove: string[] = [];
-
-        this.subscriptions.forEach((subscription) => {
-            if (subscription.sources.includes(source)) {
-                // Remove the specific source from the subscription
-                subscription.sources = subscription.sources.filter((s) => s !== source);
-
-                // If no sources left, mark subscription for removal
-                if (subscription.sources.length === 0) {
-                    subscriptionsToRemove.push(subscription.id);
-                }
-            }
-        });
-
-        // Remove subscriptions that have no sources left
-        subscriptionsToRemove.forEach((id) => {
-            this.subscriptions.delete(id);
-        });
     }
 
     /**
@@ -144,24 +110,41 @@ export class MessagingService {
     }
 
     /**
-     * Set up the global message listener (called only once)
+     * Remove subscription for an iframe
      */
-    private setupGlobalMessageListener(): void {
-        if (this.globalListenerAttached) return;
+    private removeIframeFromSubscription(messageType: MessageTypeEnum, iframe: Iframe): void {
+        const subscription = this.subscriptions.get(messageType);
+        if (!subscription) {
+            throw new Error(`Subscription for '${messageType}' not found`);
+        }
 
+        const windowSource = this.extractWindowFromIframe(iframe);
+
+        subscription.sources = subscription.sources.filter((source) => source !== windowSource);
+
+        // Delete the subscription if it has no sources left
+        if (subscription.sources.length === 0) {
+            this.subscriptions.delete(messageType);
+        }
+    }
+
+    /**
+     * Set up the message listener for capturing all window messages
+     */
+    private setupMessageListener(): void {
         window.addEventListener('message', (event) => {
             try {
-                // Validate that the message is properly formatted
+                // Validate that the message is properly formatted to filter out noise
                 if (!event.data || typeof event.data !== 'object' || !event.data.name) {
                     return;
                 }
 
                 const message = event.data;
 
-                // Find all matching subscriptions
-                this.subscriptions.forEach((subscription) => {
+                // Find the matching subscriptions and call their handler
+                this.subscriptions.forEach((subscription, key) => {
                     // Check if message type matches
-                    if (subscription.messageType !== message.name) {
+                    if (key !== message.name) {
                         return;
                     }
 
@@ -182,24 +165,12 @@ export class MessagingService {
                 console.error('Error processing iframe message:', error);
             }
         });
-
-        this.globalListenerAttached = true;
     }
 
-    private extractWindowSources(sources: Window[] | Iframe[]): Window[] {
-        return sources
-            .map((source) => {
-                if (source instanceof Iframe) {
-                    const contentWindow = source.getContentWindow();
-                    if (!contentWindow) {
-                        throw new Error(
-                            'Iframe contentWindow is not available. Make sure the iframe is mounted and loaded.',
-                        );
-                    }
-                    return contentWindow;
-                }
-                return source;
-            })
-            .filter((window): window is Window => window !== null);
+    /**
+     * Extract the window source from the Iframe object
+     */
+    private extractWindowFromIframe(iframe: Iframe): Window {
+        return iframe.getContentWindow();
     }
 }
