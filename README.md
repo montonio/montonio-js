@@ -33,11 +33,21 @@ In this case, the library and its components will be available in the global obj
 const { MontonioCheckout } = window.Montonio;
 ```
 
+The following examples use the async/await syntax. If you are using `<script>` tags (e.g. in some PHP-based frameworks), you can use `<script type="module">` to use the async/await syntax. Otherwise, you can use the `then` and `catch` syntax for the same effect.
+
 # Usage
 
 To integrate Montonio's embeddable payment methods into your checkout, you first need to create a Montonio Session on your server. Follow the [Montonio Documentation](https://docs.montonio.com/) to create a session. Once you have the session UUID, you can use it to initialize the `MontonioCheckout` component on your front-end.
 
 ### 1. Initialize MontonioCheckout
+
+First, create a container element in your HTML where the Montonio Checkout will be rendered. You need to decide on the appropriate place in your checkout.
+
+```html
+<div id="montonio-checkout-container"></div>
+```
+
+Then, initialize the `MontonioCheckout` component with the session UUID and the container element.
 
 ```javascript
 import { MontonioCheckout } from '@montonio/montonio-js'; // ES Module usage. See above for UMD imports
