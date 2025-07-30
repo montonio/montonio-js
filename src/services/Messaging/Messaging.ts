@@ -129,7 +129,7 @@ export class MessagingService {
     }
 
     /**
-     * Set up the global message listener (called only once)
+     * Set up the message listener for capturing all window messages
      */
     private setupMessageListener(): void {
         window.addEventListener('message', (event) => {
