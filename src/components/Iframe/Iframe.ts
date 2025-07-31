@@ -9,6 +9,8 @@ export class Iframe {
     private readonly element: HTMLIFrameElement;
     private readonly options: IframeOptions;
     private readonly defaultStyles: Partial<CSSStyleDeclaration> = {
+        all: 'unset', //This will unset any styles that have been applied to iframes from the parent page
+        display: 'block', //This will make sure that if two iframes are rendered next to each other, there is no gap between them
         width: '100%',
         height: '100%',
     };
