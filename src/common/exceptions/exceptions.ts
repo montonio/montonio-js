@@ -19,8 +19,8 @@ export class PaymentAuthNotInitializedError extends Error {
 }
 
 export class ValidationError extends Error {
-    constructor() {
-        super('Validation failed');
+    constructor(message: string = 'Validation failed. Check payment details and try again.') {
+        super(message);
         this.name = 'ValidationError';
     }
 }

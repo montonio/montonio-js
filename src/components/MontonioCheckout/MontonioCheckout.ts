@@ -14,6 +14,8 @@ import { MessageByType, MessageTypeEnum } from '../../services/Messaging';
 import { MontonioCheckoutNotInitializedError, PaymentFailedError, ValidationError } from '../../common';
 
 export class MontonioCheckout extends BaseComponent {
+    public isValid: boolean = false;
+
     private options: CheckoutOptions;
     private readonly environment: EnvironmentOptions;
     private paymentAuth: PaymentAuth | null = null;
@@ -43,6 +45,8 @@ export class MontonioCheckout extends BaseComponent {
             this.iframe.mount();
 
             await this.messagingService.waitForMessage(MessageTypeEnum.CHECKOUT_PAYMENT_COMPONENT_READY, this.iframe);
+
+            this.listenForPaymentFormChanges();
 
             this.loaded = true;
 
@@ -201,6 +205,20 @@ export class MontonioCheckout extends BaseComponent {
     }
 
     /**
+     * Listen for changes in the payment form and update the isValid property
+     */
+    private listenForPaymentFormChanges(): void {
+        this.messagingService.subscribe(
+            MessageTypeEnum.CHECKOUT_PAYMENT_FORM_CHANGED,
+            (message) => {
+                this.isValid = message.payload.isValid;
+                console.log('CHECKOUT_PAYMENT_FORM_CHANGED', this.isValid);
+            },
+            this.iframe,
+        );
+    }
+
+    /**
      * After a payment has completed, fetch the return URL. Keep fetching until we
      * exhaust all the attempts
      */
@@ -236,7 +254,7 @@ export class MontonioCheckout extends BaseComponent {
     }
 
     private cleanupAfterPaymentSubmission(): void {
-        this.messagingService.clearAllSubscriptions();
+        this.messagingService.clearSubscriptionsExcept([MessageTypeEnum.CHECKOUT_PAYMENT_FORM_CHANGED]);
 
         this.cleanupPaymentAuth();
     }

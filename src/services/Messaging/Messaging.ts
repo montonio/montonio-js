@@ -110,6 +110,17 @@ export class MessagingService {
     }
 
     /**
+     * Clear all subscriptions except the ones in the except array
+     */
+    public clearSubscriptionsExcept(except: MessageTypeEnum[]): void {
+        for (const key of this.subscriptions.keys()) {
+            if (!except.includes(key)) {
+                this.subscriptions.delete(key);
+            }
+        }
+    }
+
+    /**
      * Remove subscription for an iframe
      */
     private removeIframeFromSubscription(messageType: MessageTypeEnum, iframe: Iframe): void {
