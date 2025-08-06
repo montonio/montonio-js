@@ -1,1 +1,1 @@
-export { getElement } from './DOM/DOM';
+export { getElement, setBodyOverflowHidden, restoreBodyOverflow } from './DOM/DOM';

@@ -2,9 +2,11 @@ import { PaymentAuthOptions } from './types';
 import { Iframe } from '../Iframe/Iframe';
 import { BaseComponent } from '../BaseComponent';
 import { MessageTypeEnum, PaymentAuthMessageData } from '../../services/Messaging';
+import { setBodyOverflowHidden, restoreBodyOverflow } from '../../utils';
 
 export class PaymentAuth extends BaseComponent {
     private options: PaymentAuthOptions;
+    private originalBodyOverflow: string | null = null;
 
     constructor(options: PaymentAuthOptions) {
         super();
@@ -16,43 +18,69 @@ export class PaymentAuth extends BaseComponent {
      * Initialize and mount the payment auth iframe
      */
     public async initialize(): Promise<void> {
-        // Handle redirect-based payment auth first
-        if (this.options.paymentAuthData.type === 'redirect') {
-            await this.redirectViaPost(this.options.paymentAuthData);
-            return;
+        try {
+            // Handle redirect-based payment auth first
+            if (this.options.paymentAuthData.type === 'redirect') {
+                await this.redirectViaPost(this.options.paymentAuthData);
+                return;
+            }
+
+            if (!this.options.paymentAuthData.embeddedUrl) {
+                throw new Error('Embedded URL is not set in paymentAuthData');
+            }
+
+            // Set body overflow hidden to prevent background scrolling during Payment Auth
+            this.originalBodyOverflow = setBodyOverflowHidden();
+
+            // Create iframe for embedded payment auth
+            this.iframe = new Iframe({
+                src: this.options.paymentAuthData.embeddedUrl,
+                mountElement: this.mountElement!,
+                styles: {
+                    width: '100vw',
+                    height: '100vh',
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    zIndex: '16777271',
+                },
+                resizeOnHeightChange: false,
+            });
+
+            this.iframe.mount();
+
+            // Wait for the payment auth component to be ready
+            await this.messagingService.waitForMessage(
+                MessageTypeEnum.CHECKOUT_PAYMENT_AUTH_COMPONENT_READY,
+                this.iframe,
+            );
+
+            // Submit payment auth data to the payment auth iframe
+            this.messagingService.postMessage(this.iframe, {
+                name: MessageTypeEnum.CHECKOUT_SEND_PAYMENT_AUTH_DATA,
+                payload: {
+                    paymentAuthData: this.options.paymentAuthData,
+                },
+            });
+
+            this.loaded = true;
+        } catch (error) {
+            this.cleanup();
+            throw error;
+        }
+    }
+
+    /**
+     * Clean up the payment auth component and restore body overflow
+     */
+    public cleanup(): void {
+        if (this.loaded) {
+            // Restore the original body overflow
+            restoreBodyOverflow(this.originalBodyOverflow);
         }
 
-        if (!this.options.paymentAuthData.embeddedUrl) {
-            throw new Error('Embedded URL is not set in paymentAuthData');
-        }
-
-        // Create iframe for embedded payment auth
-        this.iframe = new Iframe({
-            src: this.options.paymentAuthData.embeddedUrl,
-            mountElement: this.mountElement!,
-            styles: {
-                width: '100vw',
-                height: '100vh',
-                position: 'fixed',
-                top: '0',
-                left: '0',
-                zIndex: '16777271',
-            },
-            resizeOnHeightChange: false,
-        });
-
-        this.iframe.mount();
-
-        // Wait for the payment auth component to be ready
-        await this.messagingService.waitForMessage(MessageTypeEnum.CHECKOUT_PAYMENT_AUTH_COMPONENT_READY, this.iframe);
-
-        // Submit payment auth data to the payment auth iframe
-        this.messagingService.postMessage(this.iframe, {
-            name: MessageTypeEnum.CHECKOUT_SEND_PAYMENT_AUTH_DATA,
-            payload: {
-                paymentAuthData: this.options.paymentAuthData,
-            },
-        });
+        // Call parent method to handle iframe cleanup
+        super.cleanup();
     }
 
     /**
