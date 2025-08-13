@@ -6,9 +6,7 @@ import { readFileSync } from 'fs';
 
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
-export default defineConfig(({ mode }) => {
-    const tsconfigPath = mode === 'live' ? './tsconfig.live.json' : './tsconfig.json';
-
+export default defineConfig(() => {
     return {
         build: {
             target: 'ES2018',
@@ -21,7 +19,7 @@ export default defineConfig(({ mode }) => {
             sourcemap: true,
             rollupOptions: {
                 plugins: [
-                    typescript({ tsconfig: tsconfigPath }),
+                    typescript(),
                     replace({
                         __MONTONIO_JS_VERSION__: JSON.stringify(packageJson.version),
                         preventAssignment: true,
