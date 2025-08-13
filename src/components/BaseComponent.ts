@@ -2,11 +2,11 @@ import { Iframe } from './';
 import { ConfigService, HTTPService, MessagingService } from '../services';
 
 export abstract class BaseComponent {
+    public loaded: boolean = false;
     protected httpService: HTTPService;
     protected configService: ConfigService;
     protected messagingService: MessagingService;
     protected mountElement: HTMLElement | null = null;
-    protected loaded: boolean = false;
     private _iframe: Iframe | null = null;
 
     protected constructor() {
