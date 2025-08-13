@@ -2,7 +2,7 @@ import { PaymentAuthOptions } from './types';
 import { Iframe } from '../Iframe/Iframe';
 import { BaseComponent } from '../BaseComponent';
 import { MessageTypeEnum, PaymentAuthMessageData } from '../../services/Messaging';
-import { setBodyOverflowHidden, restoreBodyOverflow } from '../../utils';
+import { disableBodyScroll, restoreBodyOverflow } from '../../utils';
 
 export class PaymentAuth extends BaseComponent {
     private options: PaymentAuthOptions;
@@ -30,7 +30,8 @@ export class PaymentAuth extends BaseComponent {
             }
 
             // Set body overflow hidden to prevent background scrolling during Payment Auth
-            this.originalBodyOverflow = setBodyOverflowHidden();
+            const { originalOverflow } = disableBodyScroll();
+            this.originalBodyOverflow = originalOverflow;
 
             // Create iframe for embedded payment auth
             this.iframe = new Iframe({
