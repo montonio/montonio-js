@@ -10,7 +10,7 @@ import { PaymentAuth } from '../PaymentAuth/PaymentAuth';
 import { BaseComponent } from '../BaseComponent';
 import { getElement } from '../../utils';
 import { Environment, EnvironmentOptions } from '../../services/Config/types';
-import { MessageByType, MessageTypeEnum } from '../../services/Messaging';
+import { MessageTypeEnum } from '../../services/Messaging';
 import {
     FailedToFetchReturnUrlError,
     MontonioCheckoutNotInitializedError,
@@ -122,7 +122,7 @@ export class MontonioCheckout extends BaseComponent {
                     this.cleanupPaymentAuth();
 
                     try {
-                        const result = await this.pollForReturnUrl(completedMessage);
+                        const result = await this.getPaymentResult(completedMessage.payload.paymentIntentUuid);
                         // Resolve the promise to the SDK user
                         resolve(result);
                     } catch (e) {
@@ -235,11 +235,9 @@ export class MontonioCheckout extends BaseComponent {
      * After a payment has completed, fetch the return URL. Keep fetching until we
      * exhaust all the attempts
      */
-    private async pollForReturnUrl(
-        paymentCompletedMessage: MessageByType<MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED>,
-    ): Promise<Pick<PaymentResult, 'returnUrl'>> {
+    private async getPaymentResult(paymentIntentUuid: string): Promise<PaymentResult> {
         const baseUrl = this.configService.getConfig('stargateUrl', this.environment);
-        const url = `${baseUrl}/api/payment-intents/${paymentCompletedMessage.payload.paymentIntentUuid}/return-url`;
+        const url = `${baseUrl}/api/payment-intents/${paymentIntentUuid}/return-url`;
         const MAX_ATTEMPTS = 10;
         const DELAY_BETWEEN_ATTEMPTS_IN_MS = 1000;
         let attempts = 0;
@@ -251,6 +249,8 @@ export class MontonioCheckout extends BaseComponent {
                 if (result?.merchantReturnUrl) {
                     return {
                         returnUrl: result.merchantReturnUrl,
+                        orderToken: result.orderToken,
+                        paymentStatus: result.paymentStatus,
                     };
                 }
             } catch (error) {
