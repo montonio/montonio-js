@@ -1,6 +1,6 @@
 import { PaymentFailedMessageData } from '../../services/Messaging';
 
-export enum MontonioSDKExceptionEnum {
+export enum ErrorEnum {
     MONTONIO_CHECKOUT_NOT_INITIALIZED = 'MONTONIO_CHECKOUT_NOT_INITIALIZED',
     VALIDATION_ERROR = 'VALIDATION_ERROR',
     PAYMENT_FAILED = 'PAYMENT_FAILED',
@@ -12,14 +12,14 @@ export class MontonioCheckoutNotInitializedError extends Error {
         message: string = 'MontonioCheckout not initialized. Please call the .initialize() method of the MontonioCheckout class first.',
     ) {
         super(message);
-        this.name = MontonioSDKExceptionEnum.MONTONIO_CHECKOUT_NOT_INITIALIZED;
+        this.name = ErrorEnum.MONTONIO_CHECKOUT_NOT_INITIALIZED;
     }
 }
 
 export class ValidationError extends Error {
     constructor(message: string = 'Validation failed. Check payment details and try again.') {
         super(message);
-        this.name = MontonioSDKExceptionEnum.VALIDATION_ERROR;
+        this.name = ErrorEnum.VALIDATION_ERROR;
     }
 }
 
@@ -28,7 +28,7 @@ export class PaymentFailedError extends Error {
 
     constructor(paymentFailedMessageData: PaymentFailedMessageData) {
         super(`Payment failed: ${paymentFailedMessageData.errorCode}`);
-        this.name = MontonioSDKExceptionEnum.PAYMENT_FAILED;
+        this.name = ErrorEnum.PAYMENT_FAILED;
         this.paymentFailedMessageData = paymentFailedMessageData;
     }
 }
@@ -39,6 +39,6 @@ export class FailedToFetchReturnUrlError extends Error {
             `Payment was successful but we failed to fetch the return-url from our servers after ${attempts} retries. 
             The customer should not try again! We will inform you about the payment being paid via webhook.`,
         );
-        this.name = MontonioSDKExceptionEnum.FAILED_TO_FETCH_RETURN_URL;
+        this.name = ErrorEnum.FAILED_TO_FETCH_RETURN_URL;
     }
 }
