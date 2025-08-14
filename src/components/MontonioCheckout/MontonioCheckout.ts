@@ -10,8 +10,13 @@ import { PaymentAuth } from '../PaymentAuth/PaymentAuth';
 import { BaseComponent } from '../BaseComponent';
 import { getElement } from '../../utils';
 import { Environment, EnvironmentOptions } from '../../services/Config/types';
-import { MessageByType, MessageTypeEnum } from '../../services/Messaging';
-import { MontonioCheckoutNotInitializedError, PaymentFailedError, ValidationError } from '../../common';
+import { MessageTypeEnum } from '../../services/Messaging';
+import {
+    FailedToFetchReturnUrlError,
+    MontonioCheckoutNotInitializedError,
+    PaymentFailedError,
+    ValidationError,
+} from '../../common';
 
 export class MontonioCheckout extends BaseComponent {
     public isValid: boolean = false;
@@ -114,10 +119,16 @@ export class MontonioCheckout extends BaseComponent {
                 async (completedMessage) => {
                     console.log('CHECKOUT_PAYMENT_COMPLETED (from main iframe)', completedMessage);
 
-                    const result = await this.handlePaymentCompletedMessage(completedMessage);
+                    this.cleanupPaymentAuth();
 
-                    // Resolve the promise to the SDK user
-                    resolve(result);
+                    try {
+                        const result = await this.getPaymentResult(completedMessage.payload.paymentIntentUuid);
+                        // Resolve the promise to the SDK user
+                        resolve(result);
+                    } catch (e) {
+                        reject(e);
+                    }
+
                     this.cleanupAfterPaymentSubmission();
                 },
                 this.iframe,
@@ -128,6 +139,8 @@ export class MontonioCheckout extends BaseComponent {
                 MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
                 (failedMessage) => {
                     console.error('CHECKOUT_PAYMENT_FAILED (from main iframe)', failedMessage);
+
+                    this.cleanupPaymentAuth();
 
                     // Send error message to the main iframe to be displayed above the payment form
                     this.messagingService.postMessage(this.iframe, {
@@ -222,11 +235,9 @@ export class MontonioCheckout extends BaseComponent {
      * After a payment has completed, fetch the return URL. Keep fetching until we
      * exhaust all the attempts
      */
-    private async handlePaymentCompletedMessage(
-        paymentCompletedMessage: MessageByType<MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED>,
-    ): Promise<PaymentResult> {
+    private async getPaymentResult(paymentIntentUuid: string): Promise<PaymentResult> {
         const baseUrl = this.configService.getConfig('stargateUrl', this.environment);
-        const url = `${baseUrl}/api/payment-intents/${paymentCompletedMessage.payload.paymentIntentUuid}/return-url`;
+        const url = `${baseUrl}/api/payment-intents/${paymentIntentUuid}/return-url`;
         const MAX_ATTEMPTS = 10;
         const DELAY_BETWEEN_ATTEMPTS_IN_MS = 1000;
         let attempts = 0;
@@ -238,6 +249,8 @@ export class MontonioCheckout extends BaseComponent {
                 if (result?.merchantReturnUrl) {
                     return {
                         returnUrl: result.merchantReturnUrl,
+                        orderToken: result.orderToken,
+                        paymentStatus: result.paymentStatus,
                     };
                 }
             } catch (error) {
@@ -250,13 +263,11 @@ export class MontonioCheckout extends BaseComponent {
             }
         }
 
-        throw new Error(`Failed to fetch the return url after ${attempts} attempts`);
+        throw new FailedToFetchReturnUrlError({ attempts });
     }
 
     private cleanupAfterPaymentSubmission(): void {
         this.messagingService.clearSubscriptionsExcept([MessageTypeEnum.CHECKOUT_PAYMENT_FORM_CHANGED]);
-
-        this.cleanupPaymentAuth();
     }
 
     private cleanupPaymentAuth(): void {

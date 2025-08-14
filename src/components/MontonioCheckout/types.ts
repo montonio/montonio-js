@@ -19,16 +19,6 @@ export interface CheckoutOptions {
      * Defaults to 'production'
      */
     environment?: EnvironmentOptions;
-
-    /**
-     * Callback when payment is completed successfully
-     */
-    // onPaymentSuccess?: (data: any) => void;
-
-    /**
-     * Callback when payment fails
-     */
-    // onPaymentError?: (error: any) => void;
 }
 
 export type UpdatableCheckoutOptions = Pick<Partial<CheckoutOptions>, 'locale'>;
@@ -46,12 +36,14 @@ export interface GatewayUrlResponse {
  */
 export interface PaymentResult {
     returnUrl: string;
-    orderToken?: string;
-    paymentStatus?: string;
+    orderToken: string;
+    paymentStatus: PaymentStatusEnum;
 }
 
 export interface ReturnUrlResponse {
     merchantReturnUrl: string;
+    orderToken: string;
+    paymentStatus: PaymentStatusEnum;
 }
 
 export enum LocaleEnum {
@@ -62,4 +54,14 @@ export enum LocaleEnum {
     PL = 'pl',
     FI = 'fi',
     RU = 'ru',
+}
+
+export enum PaymentStatusEnum {
+    PENDING = 'PENDING',
+    AUTHORIZED = 'AUTHORIZED',
+    PAID = 'PAID',
+    PARTIALLY_REFUNDED = 'PARTIALLY_REFUNDED',
+    REFUNDED = 'REFUNDED',
+    VOIDED = 'VOIDED',
+    ABANDONED = 'ABANDONED',
 }
