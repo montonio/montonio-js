@@ -47,13 +47,13 @@ export interface ReturnUrlResponse {
 }
 
 export enum LocaleEnum {
-    EN_US = 'en_US',
+    EN = 'en',
     ET = 'et',
-    LV = 'lv',
     LT = 'lt',
+    LV = 'lv',
     PL = 'pl',
-    FI = 'fi',
     RU = 'ru',
+    FI = 'fi',
 }
 
 export enum PaymentStatusEnum {
