@@ -17,6 +17,8 @@ export class MontonioCheckoutNotInitializedError extends Error {
 }
 
 export class ValidationError extends Error {
+    displayedInPaymentComponent: boolean = true;
+
     constructor(message: string = 'Validation failed. Check payment details and try again.') {
         super(message);
         this.name = ErrorEnum.VALIDATION_ERROR;
@@ -25,6 +27,7 @@ export class ValidationError extends Error {
 
 export class PaymentFailedError extends Error {
     paymentFailedMessageData: PaymentFailedMessageData;
+    displayedInPaymentComponent: boolean = true;
 
     constructor(paymentFailedMessageData: PaymentFailedMessageData) {
         super(`Payment failed: ${paymentFailedMessageData.errorCode}`);
