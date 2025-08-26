@@ -43,9 +43,6 @@ export class MontonioCheckout extends BaseComponent {
             this.iframe = new Iframe({
                 src: sessionData.url,
                 mountElement: this.mountElement,
-                styles: {
-                    minHeight: '230px',
-                },
             });
             this.iframe.mount();
 
