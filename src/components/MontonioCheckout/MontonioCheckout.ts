@@ -54,6 +54,7 @@ export class MontonioCheckout extends BaseComponent {
 
             return true;
         } catch (error) {
+            console.error('Error initializing MontonioCheckout', error);
             this.cleanup();
             throw error;
         }
