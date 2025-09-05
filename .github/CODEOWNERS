@@ -6,3 +6,6 @@
 /.github/CODEOWNERS                             @montonio/infrastructure
 /.github/**/prelive-branch-protection.yml       @montonio/infrastructure
 /.github/**/live-branch-protection.yml          @montonio/infrastructure
+
+# PCI DSS restrictions
+/.github/**/dependabot-resolved.yml             @montonio/cto @Kalluste

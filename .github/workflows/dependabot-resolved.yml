@@ -1,0 +1,16 @@
+name: Dependabot Alerts Resolved
+
+on:
+  pull_request:
+    branches:
+      - "prelive"
+
+permissions:
+  contents: read
+  security-events: read
+  checks: read
+
+jobs:
+  dependabot-check:
+    uses: montonio/github-actions/.github/workflows/dependabot-resolved.yml@main
+    secrets: inherit
