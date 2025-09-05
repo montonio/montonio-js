@@ -1,0 +1,62 @@
+name: Branch Protection
+
+on:
+  pull_request:
+    branches:
+      - "prelive"
+      - "live"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source-branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Validate PR source branch
+        run: |
+          echo "🔍 Validating PR source branch..."
+          echo "Target branch: ${{ github.base_ref }}"
+          echo "PR head ref: ${{ github.head_ref }}"
+          echo "PR base ref: ${{ github.base_ref }}"
+
+          # Determine allowed source branches based on target branch
+          if [[ "${{ github.base_ref }}" == "prelive" ]]; then
+            ALLOWED_BRANCHES="develop"
+          elif [[ "${{ github.base_ref }}" == "live" ]]; then
+            ALLOWED_BRANCHES="prelive"
+          else
+            echo "❌ Unexpected target branch: ${{ github.base_ref }}"
+            exit 1
+          fi
+
+          echo "Allowed source branches: $ALLOWED_BRANCHES"
+
+          # Convert comma-separated list to array
+          IFS=',' read -ra ALLOWED_BRANCHES_ARRAY <<< "$ALLOWED_BRANCHES"
+
+          # Check if source branch is in allowed list
+          BRANCH_ALLOWED=false
+          for branch in "${ALLOWED_BRANCHES_ARRAY[@]}"; do
+            # Trim whitespace
+            branch=$(echo "$branch" | xargs)
+            if [[ "${{ github.head_ref }}" == "$branch" ]]; then
+              BRANCH_ALLOWED=true
+              break
+            fi
+          done
+
+          if [[ "$BRANCH_ALLOWED" == "true" ]]; then
+            echo "✅ Source branch '${{ github.head_ref }}' is allowed to merge into '${{ github.base_ref }}'"
+          else
+            echo "❌ Source branch '${{ github.head_ref }}' is not allowed to merge into '${{ github.base_ref }}'"
+            echo "   Allowed source branches: $ALLOWED_BRANCHES"
+            echo ""
+            echo "💡 Please create your PR from one of the allowed branches:"
+            for branch in "${ALLOWED_BRANCHES_ARRAY[@]}"; do
+              branch=$(echo "$branch" | xargs)
+              echo "   - $branch"
+            done
+            exit 1
+          fi
