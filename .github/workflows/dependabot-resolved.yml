@@ -1,0 +1,92 @@
+name: Dependabot Alerts Resolved
+
+on:
+  pull_request:
+    branches:
+      - "prelive"
+
+permissions:
+  contents: read
+  security-events: read
+  checks: read
+
+jobs:
+  security-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check for Dependabot alerts
+        id: security-check
+        run: |
+          echo "🔍 Checking for high and critical severity Dependabot alerts..."
+
+          # Debug: Log API request parameters
+          echo "🐛 Debug: API request parameters:"
+          echo "  Repository: ${{ github.repository }}"
+          echo "  Endpoint: /repos/${{ github.repository }}/dependabot/alerts?state=open"
+          echo "  Headers: Accept: application/vnd.github+json, X-GitHub-Api-Version: 2022-11-28"
+          echo "  JQ Filter: [.[] | select(.security_advisory.severity == \"high\" or .security_advisory.severity == \"critical\")]"
+          echo ""
+
+          # Get all open Dependabot alerts with high or critical severity
+          ALERTS=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/dependabot/alerts?state=open" \
+            --jq '[.[] | select(.security_advisory.severity == "high" or .security_advisory.severity == "critical")]')
+
+          if [ "$ALERTS" = "[]" ] || [ -z "$ALERTS" ]; then
+            echo "✅ No high or critical severity Dependabot alerts found"
+            echo "alerts-found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Count alerts
+          ALERT_COUNT=$(echo "$ALERTS" | jq 'length')
+
+          echo "❌ Found $ALERT_COUNT high/critical severity Dependabot alert(s):"
+          echo ""
+
+          # Display alerts in a formatted way
+          echo "$ALERTS" | jq -r '.[] | 
+            "📋 Alert #\(.number) - \(.security_advisory.severity | ascii_upcase) severity",
+            "   Package: \(.dependency.package.name)",
+            "   Issue: \(.security_advisory.summary)",
+            "   Vulnerable range: \(.security_vulnerability.vulnerable_version_range)",
+            "   First patched version: \(.security_vulnerability.first_patched_version.identifier // "N/A")",
+            ""'
+
+          echo "alerts-found=true" >> $GITHUB_OUTPUT
+          echo "alert-count=$ALERT_COUNT" >> $GITHUB_OUTPUT
+
+          # Save detailed alert info for the summary
+          echo "$ALERTS" > alerts.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_DEPENDABOT_PAT }}
+
+      - name: Create job summary
+        if: steps.security-check.outputs.alerts-found == 'true'
+        run: |
+          echo "## 🚨 Security Alert Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Found **${{ steps.security-check.outputs.alert-count }}** high or critical severity Dependabot alerts that must be resolved before merging:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Create a table from the alerts
+          echo "| Alert # | Severity | Package | Issue | Patched Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|---------|-------|-----------------|" >> $GITHUB_STEP_SUMMARY
+
+          cat alerts.json | jq -r '.[] | 
+            "| [#\(.number)](${{ github.server_url }}/${{ github.repository }}/security/dependabot/\(.number)) | \(.security_advisory.severity | ascii_upcase) | `\(.dependency.package.name)` | \(.security_advisory.summary) | \(.security_vulnerability.first_patched_version.identifier // "N/A") |"' >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View all Dependabot alerts](${{ github.server_url }}/${{ github.repository }}/security/dependabot)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please resolve these security vulnerabilities before merging to staging." >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if high/critical alerts found
+        if: steps.security-check.outputs.alerts-found == 'true'
+        run: |
+          echo "❌ Security check failed: ${{ steps.security-check.outputs.alert-count }} high/critical alerts found"
+          echo "Please resolve the Dependabot alerts before merging to staging"
+          exit 1
