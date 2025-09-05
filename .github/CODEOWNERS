@@ -2,10 +2,9 @@
 *                       @montonio/cto @montonio/software-engineer-payments
 
 # Restricted files cannot be edited without approval from the Infrastructure team
-/.github/**/cicd.yml                            @montonio/infrastructure
 /.github/CODEOWNERS                             @montonio/infrastructure
-/.github/**/prelive-branch-protection.yml       @montonio/infrastructure
-/.github/**/live-branch-protection.yml          @montonio/infrastructure
-
-# PCI DSS restrictions
-/.github/**/dependabot-resolved.yml             @montonio/cto @Kalluste
+/.github/workflows/branch-protection.yml        @montonio/infrastructure
+/.github/workflows/dependabot-resolved.yml      @montonio/infrastructure
+/.github/workflows/live-deploy.yml              @montonio/infrastructure
+/.github/workflows/pr-validation.yml            @montonio/infrastructure
+/.github/workflows/prelive-deploy.yml           @montonio/infrastructure
