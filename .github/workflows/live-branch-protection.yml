@@ -1,0 +1,16 @@
+name: Live Branch Protection
+
+on:
+  pull_request:
+    branches:
+      - "live"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source:
+    uses: montonio/github-actions/.github/workflows/branch-protection.yml@main
+    with:
+      target-branch: "live"
+      allowed-source-branches: "prelive"
