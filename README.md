@@ -41,7 +41,7 @@ To integrate Montonio's embeddable payment methods into your checkout, you first
 
 ### 1. Initialize MontonioCheckout
 
-First, create a container element in your HTML where the Montonio Checkout will be rendered. You need to decide on the appropriate place in your checkout.
+First, create a container element in your HTML where MontonioCheckout will be rendered. You need to decide on the appropriate place in your checkout page.
 
 ```html
 <div id="montonio-checkout-container"></div>
@@ -61,7 +61,7 @@ const montonioCheckout = new MontonioCheckout(checkoutOptions);
 await montonioCheckout.initialize('#montonio-checkout-container'); // The CSS selector string or HTMLElement of the container to mount the Montonio Checkout component
 ```
 
-The `MontonioCheckout.initialize()` method will render the Montonio Checkout iframe in the specified container. You can then interact with the checkout by calling methods on the `MontonioCheckout` instance.
+The `MontonioCheckout.initialize()` method will render the MontonioCheckout component in the specified container. You can then interact with it by calling methods on the `MontonioCheckout` instance.
 
 ### 2. Validate the payment form
 
