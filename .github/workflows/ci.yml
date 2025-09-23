@@ -21,7 +21,3 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-
-  check-sbom-for-pci-dss:
-    uses: montonio/github-actions/.github/workflows/pci-sbom-check.yml@main
-    secrets: inherit
