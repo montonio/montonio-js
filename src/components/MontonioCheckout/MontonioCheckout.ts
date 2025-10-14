@@ -223,7 +223,6 @@ export class MontonioCheckout extends BaseComponent {
             MessageTypeEnum.CHECKOUT_PAYMENT_FORM_CHANGED,
             (message) => {
                 this.isValid = message.payload.isValid;
-                console.log('CHECKOUT_PAYMENT_FORM_CHANGED', this.isValid);
             },
             this.iframe,
         );
