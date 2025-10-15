@@ -69,7 +69,7 @@ export class Iframe {
     }
 
     private setupIframe(): void {
-        const { src, allow = 'payment', styles = {} } = this.options;
+        const { src, allow = 'camera; microphone; geolocation; payment', styles = {} } = this.options;
 
         // Set iframe attributes
         this.element.src = src;
