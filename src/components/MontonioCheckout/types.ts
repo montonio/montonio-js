@@ -19,6 +19,16 @@ export interface CheckoutOptions {
      * Defaults to 'production'
      */
     environment?: EnvironmentOptions;
+
+    /**
+     * Called when a payment completes successfully
+     */
+    onSuccess?: (result: PaymentResult) => void;
+
+    /**
+     * Called when a payment fails or validation errors occur
+     */
+    onError?: (error: Error) => void;
 }
 
 export type UpdatableCheckoutOptions = Pick<Partial<CheckoutOptions>, 'locale'>;

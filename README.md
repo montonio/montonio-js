@@ -37,7 +37,7 @@ The following examples use the async/await syntax. If you are using `<script>` t
 
 # Usage
 
-To integrate Montonio's embeddable payment methods into your checkout, you first need to create a Montonio Session on your server. Follow the [Montonio Documentation](https://docs.montonio.com/) to create a session. Once you have the session UUID, you can use it to initialize the `MontonioCheckout` component on your front-end.
+To integrate Montonio's embeddable payment methods into your checkout, you first need to create a Montonio Session on your server. Follow the [Embedded Cards](https://docs.montonio.com/api/stargate/guides/embedded-cards) guide to create a session. Once you have the session UUID, you can use it to initialize the `MontonioCheckout` component on your front-end.
 
 ### 1. Initialize MontonioCheckout
 
@@ -71,7 +71,7 @@ Most embedded payment methods require user input (e.g. card details). As such, y
 // User clicks the "Pay" button in your checkout form
 // Make sure to now lock your checkout and prevent the user from making any further changes.
 try {
-    await montonioCheckout.validateOrReject();
+    montonioCheckout.validateOrReject();
     // Proceed with the payment
 } catch (error) {
     // Handle validation errors
@@ -80,7 +80,7 @@ try {
 
 ### 3. Create the order and submit the payment
 
-Once the user has clicked the "Pay" button in your checkout and you have validated the form, you can create the order and submit the payment. First, you need to create a Montonio Order on your server. Follow the [Montonio Documentation](https://docs.montonio.com/) to create an order. Make sure you include the session UUID in the order request.
+Once the user has clicked the "Pay" button in your checkout and you have validated the form, you can create the order and submit the payment. First, you need to create a Montonio Order on your server. Follow the [Create and validate an Order](https://docs.montonio.com/api/stargate/guides/orders) guide to create an order. Make sure you include the session UUID in the order request.
 
 Once the order is created, you can call the `submitPayment` method on the `MontonioCheckout` instance. 
 
