@@ -47,7 +47,7 @@ First, create a container element in your HTML where MontonioCheckout will be re
 <div id="montonio-checkout-container"></div>
 ```
 
-Then, initialize the `MontonioCheckout` component with the session UUID and the container element.
+Then, initialize the `MontonioCheckout` component with the session UUID, callback handlers, and the container element.
 
 ```javascript
 import { MontonioCheckout } from '@montonio/montonio-js'; // ES Module usage. See above for UMD imports
@@ -55,6 +55,17 @@ import { MontonioCheckout } from '@montonio/montonio-js'; // ES Module usage. Se
 const checkoutOptions = {
     sessionUuid: 'session-uuid', // The UUID of the session created on your server
     environment: 'sandbox', // Defaults to 'production'
+    onSuccess: (result) => {
+        // Payment completed successfully
+        // Redirect to the thank you page
+        window.location.href = result.returnUrl;
+    },
+    onError: (error) => {
+        // Payment failed or validation error occurred
+        console.error('Payment failed:', error);
+        alert('Payment failed. Please try again.');
+        // Unlock your checkout form to allow the user to try again
+    }
 };
 
 const montonioCheckout = new MontonioCheckout(checkoutOptions);
@@ -87,14 +98,19 @@ Once the order is created, you can call the `submitPayment` method on the `Monto
 Immediately after the user clicks "Pay" and even before you create the Montonio order, lock your checkout and prevent the user from making any further changes. Show a loading indicator to the user while the order is being created and while the payment is being submitted.
 
 ```javascript
-try {
-    const result = await montonioCheckout.submitPayment();
-    window.location.href = result.returnUrl; // Redirect the user to the thank you page
-} catch (error) {
-    // Handle errors
-}
+// Submit the payment
+montonioCheckout.submitPayment();
+
+// The onSuccess callback will be invoked when payment completes successfully
+// The onError callback will be invoked if payment fails
 ```
 
-The `MontonioCheckout.submitPayment()` method will attempt to submit the payment form and complete the payment. In case a payment method requires additional user authentication (such as 3DS for card payments), a modal will pop up to handle the authentication. The original `submitPayment` promise will be resolved when the authentication is complete, and the final result of the payment process will be returned.
+The `MontonioCheckout.submitPayment()` method will initiate the payment submission. In case a payment method requires additional user authentication (such as 3DS for card payments), a modal will pop up to handle the authentication. 
 
-The final result will contain the `paymentStatus`, `orderToken`, and `returnUrl` fields. The `returnUrl` is the URL you provided in the backend request to create the order. As per the API documentation, this URL will contain the `order-token` query parameter, which you can use to validate the payment. In most cases, you should just redirect the user to the `returnUrl` and handle the token validation on that page.
+When the payment completes (successfully or with an error), the appropriate callback you defined during initialization will be invoked:
+- **`onSuccess(result)`**: Called when payment is successful. The result contains `paymentStatus`, `orderToken`, and `returnUrl` fields.
+- **`onError(error)`**: Called when payment fails or validation errors occur.
+
+The `returnUrl` is the URL you provided in the backend request to create the order. As per the API documentation, this URL will contain the `order-token` query parameter, which you can use to validate the payment. In most cases, you should redirect the user to the `returnUrl` in your `onSuccess` callback and handle the token validation on that page.
+
+**Note:** The callbacks will be invoked even if the payment completes without explicitly calling `submitPayment()`, for example if the user completes the payment directly within the embedded payment form.

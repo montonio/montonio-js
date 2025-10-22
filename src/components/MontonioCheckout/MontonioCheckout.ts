@@ -24,8 +24,6 @@ export class MontonioCheckout extends BaseComponent {
     private options: CheckoutOptions;
     private readonly environment: EnvironmentOptions;
     private paymentAuth: PaymentAuth | null = null;
-    private currentPaymentResolve: ((value: PaymentResult) => void) | null = null;
-    private currentPaymentReject: ((reason?: unknown) => void) | null = null;
 
     constructor(options: CheckoutOptions) {
         super();
@@ -101,24 +99,17 @@ export class MontonioCheckout extends BaseComponent {
     }
 
     /**
-     * Submit the payment. Call this after creating the Order with the Montonio backend API
-     * @returns Promise that resolves to a PaymentResult
+     * Submit the payment. Call this after creating the Order with the Montonio backend API.
+     * The result will be provided via the onSuccess callback, and errors via the onError callback.
      */
-    public async submitPayment(): Promise<PaymentResult> {
-        console.log('called submitPayment');
+    public submitPayment(): void {
         if (!this.loaded) {
             throw new MontonioCheckoutNotInitializedError();
         }
 
-        return new Promise((resolve, reject) => {
-            // Store the resolve and reject callbacks for this payment attempt
-            this.currentPaymentResolve = resolve;
-            this.currentPaymentReject = reject;
-
-            // Submit the payment - the global listeners will handle the response
-            this.messagingService.postMessage(this.iframe, {
-                name: MessageTypeEnum.CHECKOUT_SUBMIT_PAYMENT,
-            });
+        // Submit the payment - callbacks will be invoked when payment completes/fails
+        this.messagingService.postMessage(this.iframe, {
+            name: MessageTypeEnum.CHECKOUT_SUBMIT_PAYMENT,
         });
     }
 
@@ -284,40 +275,17 @@ export class MontonioCheckout extends BaseComponent {
         }
     }
 
-    private clearPaymentPromiseCallbacks(): void {
-        this.currentPaymentResolve = null;
-        this.currentPaymentReject = null;
-    }
-
     /**
-     * Handle payment success - resolves Promise and calls callback
+     * Handle payment success - calls the onSuccess callback
      */
     private handlePaymentSuccess(result: PaymentResult): void {
-        // Resolve the Promise if submitPayment() was called
-        if (this.currentPaymentResolve) {
-            this.currentPaymentResolve(result);
-            this.clearPaymentPromiseCallbacks();
-        }
-
-        // Call the global callback if defined
-        if (this.options.onSuccess) {
-            this.options.onSuccess(result);
-        }
+        this.options.onSuccess(result);
     }
 
     /**
-     * Handle payment error - rejects Promise and calls callback
+     * Handle payment error - calls the onError callback
      */
     private handlePaymentError(error: Error): void {
-        // Reject the Promise if submitPayment() was called
-        if (this.currentPaymentReject) {
-            this.currentPaymentReject(error);
-            this.clearPaymentPromiseCallbacks();
-        }
-
-        // Call the global error callback if defined
-        if (this.options.onError) {
-            this.options.onError(error);
-        }
+        this.options.onError(error);
     }
 }
