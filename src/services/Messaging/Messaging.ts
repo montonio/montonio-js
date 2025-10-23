@@ -121,9 +121,9 @@ export class MessagingService {
     }
 
     /**
-     * Remove subscription for an iframe
+     * Remove an iframe from a subscription's sources
      */
-    private removeIframeFromSubscription(messageType: MessageTypeEnum, iframe: Iframe): void {
+    public removeIframeFromSubscription(messageType: MessageTypeEnum, iframe: Iframe): void {
         const subscription = this.subscriptions.get(messageType);
         if (!subscription) {
             throw new Error(`Subscription for '${messageType}' not found`);
