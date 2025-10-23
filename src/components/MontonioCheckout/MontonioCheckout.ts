@@ -48,7 +48,7 @@ export class MontonioCheckout extends BaseComponent {
 
             await this.messagingService.waitForMessage(MessageTypeEnum.CHECKOUT_PAYMENT_COMPONENT_READY, this.iframe);
 
-            this.listenForPaymentFormChanges();
+            this.setUpListeners();
 
             this.loaded = true;
 
@@ -82,129 +82,38 @@ export class MontonioCheckout extends BaseComponent {
     /**
      * Check the validity of the payment form. Throws an error if the payment form is invalid.
      */
-    public async validateOrReject(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.messagingService
-                .waitForMessage(MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT, this.iframe)
-                .then((res) => {
-                    if (res.payload.isValid) {
-                        resolve();
-                    } else {
-                        reject(new ValidationError());
-                    }
-                })
-                .catch(() => reject(new ValidationError()));
+    public validateOrReject(): void {
+        console.log('Called validateOrReject, isValid:', this.isValid);
+        if (this.isValid) {
+            return;
+        }
 
-            this.messagingService.postMessage(this.iframe, {
-                name: MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS,
-            });
+        // Trigger validation in the iframe to show errors to the user
+        this.messagingService.postMessage(this.iframe, {
+            name: MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS,
         });
+
+        throw new ValidationError();
     }
 
     /**
-     * Submit the payment. Call this after creating the Order with the Montonio backend API
-     * @returns Promise that resolves to a PaymentResult
+     * Submit the payment. Call this after creating the Order with the Montonio backend API.
+     * The result will be provided via the onSuccess callback, and errors via the onError callback.
      */
-    public async submitPayment(): Promise<PaymentResult> {
+    public submitPayment(): void {
         if (!this.loaded) {
             throw new MontonioCheckoutNotInitializedError();
         }
 
-        return new Promise((resolve, reject) => {
-            // Handler for payment completion
-            this.messagingService.subscribe(
-                MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
-                async (completedMessage) => {
-                    console.log('CHECKOUT_PAYMENT_COMPLETED (from main iframe)', completedMessage);
-
-                    this.cleanupPaymentAuth();
-
-                    try {
-                        const result = await this.getPaymentResult(completedMessage.payload.paymentIntentUuid);
-                        // Resolve the promise to the SDK user
-                        resolve(result);
-                    } catch (e) {
-                        reject(e);
-                    }
-
-                    this.cleanupAfterPaymentSubmission();
-                },
-                this.iframe,
-            );
-
-            // Handler for payment failure
-            this.messagingService.subscribe(
-                MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
-                (failedMessage) => {
-                    console.error('CHECKOUT_PAYMENT_FAILED (from main iframe)', failedMessage);
-
-                    this.cleanupPaymentAuth();
-
-                    // Send error message to the main iframe to be displayed above the payment form
-                    this.messagingService.postMessage(this.iframe, {
-                        name: MessageTypeEnum.CHECKOUT_SEND_PAYMENT_FAILED_DATA,
-                        payload: failedMessage.payload,
-                    });
-
-                    // Reject the promise to the SDK user
-                    reject(new PaymentFailedError(failedMessage.payload));
-                    this.cleanupAfterPaymentSubmission();
-                },
-                this.iframe,
-            );
-
-            // Handler for validation errors
-            this.messagingService.subscribe(
-                MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT,
-                (res) => {
-                    console.log('CHECKOUT_VALIDATE_FIELDS_RESULT', res);
-                    if (!res.payload.isValid) {
-                        reject(new ValidationError());
-                    }
-                },
-                this.iframe,
-            );
-
-            // Handler for Payment Auth (3DS) in case it is requested by the main iframe
-            this.messagingService.subscribe(
-                MessageTypeEnum.CHECKOUT_START_PAYMENT_AUTH,
-                async (message) => {
-                    try {
-                        console.log('PAYMENT AUTH STARTED', message);
-
-                        this.paymentAuth = new PaymentAuth({
-                            paymentAuthData: message.payload.paymentAuthData,
-                        });
-
-                        await this.paymentAuth.initialize();
-
-                        // Add the PaymentAuth iframe to existing subscriptions
-                        // to get completion/failure messages also from PaymentAuth iframe
-                        const paymentAuthIframe = this.paymentAuth.iframe;
-                        this.messagingService.addIframeToSubscription(
-                            MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
-                            paymentAuthIframe,
-                        );
-                        this.messagingService.addIframeToSubscription(
-                            MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
-                            paymentAuthIframe,
-                        );
-                    } catch (error) {
-                        // This error shouldn't happen in normal payment failures, only if the payment auth iframe initialization fails
-                        // Still, we need to reject the promise to the SDK user
-                        reject(error);
-                    }
-                },
-                this.iframe,
-            );
-
-            // Submit the payment
-            this.messagingService.postMessage(this.iframe, {
-                name: MessageTypeEnum.CHECKOUT_SUBMIT_PAYMENT,
-            });
+        // Submit the payment - callbacks will be invoked when payment completes/fails
+        this.messagingService.postMessage(this.iframe, {
+            name: MessageTypeEnum.CHECKOUT_SUBMIT_PAYMENT,
         });
     }
 
+    /**
+     * Fetch the session data from the Stargate to get the gateway URL for the inner iframe
+     */
     private async fetchSession(): Promise<GatewayUrlResponse> {
         const baseUrl = this.configService.getConfig('stargateUrl', this.environment);
 
@@ -216,13 +125,124 @@ export class MontonioCheckout extends BaseComponent {
     }
 
     /**
-     * Listen for changes in the payment form and update the isValid property
+     * Set up global listeners for payment completion, failure, payment auth, and validation.
      */
-    private listenForPaymentFormChanges(): void {
+    private setUpListeners(): void {
+        this.setUpFormChangeListener();
+        this.setUpPaymentCompletedListener();
+        this.setUpPaymentFailedListener();
+        this.setUpValidationListener();
+        this.setUpPaymentAuthListener();
+    }
+
+    /**
+     * Listen for payment form changes and update the isValid property
+     */
+    private setUpFormChangeListener(): void {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_PAYMENT_FORM_CHANGED,
             (message) => {
+                console.log('CHECKOUT_PAYMENT_FORM_CHANGED', message.payload.isValid);
                 this.isValid = message.payload.isValid;
+            },
+            this.iframe,
+        );
+    }
+
+    /**
+     * Listen for payment completion messages and handle the payment success
+     */
+    private setUpPaymentCompletedListener(): void {
+        this.messagingService.subscribe(
+            MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
+            async (completedMessage) => {
+                console.log('CHECKOUT_PAYMENT_COMPLETED (from main iframe)', completedMessage);
+
+                this.cleanupPaymentAuth();
+
+                try {
+                    const result = await this.getPaymentResult(completedMessage.payload.paymentIntentUuid);
+                    this.handlePaymentSuccess(result);
+                } catch (e) {
+                    this.handlePaymentError(e as Error);
+                }
+            },
+            this.iframe,
+        );
+    }
+
+    /**
+     * Listen for payment failure messages and handle the error
+     */
+    private setUpPaymentFailedListener(): void {
+        this.messagingService.subscribe(
+            MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
+            (failedMessage) => {
+                console.error('CHECKOUT_PAYMENT_FAILED (from main iframe)', failedMessage);
+
+                this.cleanupPaymentAuth();
+
+                // Send error message to the main iframe to be displayed above the payment form
+                this.messagingService.postMessage(this.iframe, {
+                    name: MessageTypeEnum.CHECKOUT_SEND_PAYMENT_FAILED_DATA,
+                    payload: failedMessage.payload,
+                });
+
+                // Reject the promise and call error callback
+                this.handlePaymentError(new PaymentFailedError(failedMessage.payload));
+            },
+            this.iframe,
+        );
+    }
+
+    /**
+     * Listen for validation result messages from the iframe
+     */
+    private setUpValidationListener(): void {
+        this.messagingService.subscribe(
+            MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT,
+            (res) => {
+                console.log('CHECKOUT_VALIDATE_FIELDS_RESULT', res);
+                if (!res.payload.isValid) {
+                    this.handlePaymentError(new ValidationError());
+                }
+            },
+            this.iframe,
+        );
+    }
+
+    /**
+     * Listen for payment auth (3DS) requests and initialize the PaymentAuth component
+     */
+    private setUpPaymentAuthListener(): void {
+        this.messagingService.subscribe(
+            MessageTypeEnum.CHECKOUT_START_PAYMENT_AUTH,
+            async (message) => {
+                try {
+                    console.log('PAYMENT AUTH STARTED', message);
+
+                    this.paymentAuth = new PaymentAuth({
+                        paymentAuthData: message.payload.paymentAuthData,
+                    });
+
+                    await this.paymentAuth.initialize();
+
+                    // Add the PaymentAuth iframe to existing subscriptions
+                    // to get completion/failure messages also from PaymentAuth iframe
+                    const paymentAuthIframe = this.paymentAuth.iframe;
+                    this.messagingService.addIframeToSubscription(
+                        MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
+                        paymentAuthIframe,
+                    );
+                    this.messagingService.addIframeToSubscription(
+                        MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
+                        paymentAuthIframe,
+                    );
+                } catch (error) {
+                    // This error shouldn't happen in normal payment failures, only if the payment auth iframe initialization fails
+                    // Still, we need to throw an error to the SDK user
+                    this.handlePaymentError(error as Error);
+                }
             },
             this.iframe,
         );
@@ -241,6 +261,7 @@ export class MontonioCheckout extends BaseComponent {
 
         while (attempts < MAX_ATTEMPTS) {
             try {
+                console.log('Fetching return URL');
                 const result = await this.httpService.get<ReturnUrlResponse>(url);
                 attempts++;
                 if (result?.merchantReturnUrl) {
@@ -263,14 +284,38 @@ export class MontonioCheckout extends BaseComponent {
         throw new FailedToFetchReturnUrlError({ attempts });
     }
 
-    private cleanupAfterPaymentSubmission(): void {
-        this.messagingService.clearSubscriptionsExcept([MessageTypeEnum.CHECKOUT_PAYMENT_FORM_CHANGED]);
-    }
-
+    /**
+     * Destroy the PaymentAuth component and remove it from success/failure subscriptions
+     */
     private cleanupPaymentAuth(): void {
         if (this.paymentAuth) {
+            // Remove the PaymentAuth iframe from the payment completion/failure subscriptions
+            this.messagingService.removeIframeFromSubscription(
+                MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
+                this.paymentAuth.iframe,
+            );
+            this.messagingService.removeIframeFromSubscription(
+                MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
+                this.paymentAuth.iframe,
+            );
+
+            // Clean up and destroy the PaymentAuth component
             this.paymentAuth.cleanup();
             this.paymentAuth = null;
         }
+    }
+
+    /**
+     * Handle payment success - calls the onSuccess callback
+     */
+    private handlePaymentSuccess(result: PaymentResult): void {
+        this.options.onSuccess(result);
+    }
+
+    /**
+     * Handle payment error - calls the onError callback
+     */
+    private handlePaymentError(error: Error): void {
+        this.options.onError(error);
     }
 }
