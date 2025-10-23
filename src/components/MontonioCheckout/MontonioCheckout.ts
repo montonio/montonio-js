@@ -83,12 +83,10 @@ export class MontonioCheckout extends BaseComponent {
      * Check the validity of the payment form. Throws an error if the payment form is invalid.
      */
     public validateOrReject(): void {
+        console.log('Called validateOrReject, isValid:', this.isValid);
         if (this.isValid) {
-            console.log('called validateOrReject, isValid is true');
             return;
         }
-
-        console.log('called validateOrReject, isValid is false');
 
         // Trigger validation in the iframe to show errors to the user
         this.messagingService.postMessage(this.iframe, {
@@ -113,6 +111,9 @@ export class MontonioCheckout extends BaseComponent {
         });
     }
 
+    /**
+     * Fetch the session data from the Stargate to get the gateway URL for the inner iframe
+     */
     private async fetchSession(): Promise<GatewayUrlResponse> {
         const baseUrl = this.configService.getConfig('stargateUrl', this.environment);
 
@@ -124,10 +125,20 @@ export class MontonioCheckout extends BaseComponent {
     }
 
     /**
-     * Listen for changes in the payment form and update the isValid property.
-     * Also set up global listeners for payment completion, failure, and payment auth.
+     * Set up global listeners for payment completion, failure, payment auth, and validation.
      */
     private setUpListeners(): void {
+        this.setUpFormChangeListener();
+        this.setUpPaymentCompletedListener();
+        this.setUpPaymentFailedListener();
+        this.setUpValidationListener();
+        this.setUpPaymentAuthListener();
+    }
+
+    /**
+     * Listen for payment form changes and update the isValid property
+     */
+    private setUpFormChangeListener(): void {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_PAYMENT_FORM_CHANGED,
             (message) => {
@@ -136,8 +147,12 @@ export class MontonioCheckout extends BaseComponent {
             },
             this.iframe,
         );
+    }
 
-        // Handler for payment completion
+    /**
+     * Listen for payment completion messages and handle the payment success
+     */
+    private setUpPaymentCompletedListener(): void {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
             async (completedMessage) => {
@@ -154,8 +169,12 @@ export class MontonioCheckout extends BaseComponent {
             },
             this.iframe,
         );
+    }
 
-        // Handler for payment failure
+    /**
+     * Listen for payment failure messages and handle the error
+     */
+    private setUpPaymentFailedListener(): void {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
             (failedMessage) => {
@@ -174,8 +193,12 @@ export class MontonioCheckout extends BaseComponent {
             },
             this.iframe,
         );
+    }
 
-        // Handler for validation errors
+    /**
+     * Listen for validation result messages from the iframe
+     */
+    private setUpValidationListener(): void {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT,
             (res) => {
@@ -186,8 +209,12 @@ export class MontonioCheckout extends BaseComponent {
             },
             this.iframe,
         );
+    }
 
-        // Handler for Payment Auth (3DS) in case it is requested by the main iframe
+    /**
+     * Listen for payment auth (3DS) requests and initialize the PaymentAuth component
+     */
+    private setUpPaymentAuthListener(): void {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_START_PAYMENT_AUTH,
             async (message) => {
@@ -213,7 +240,7 @@ export class MontonioCheckout extends BaseComponent {
                     );
                 } catch (error) {
                     // This error shouldn't happen in normal payment failures, only if the payment auth iframe initialization fails
-                    // Still, we need to reject the promise to the SDK user
+                    // Still, we need to throw an error to the SDK user
                     this.handlePaymentError(error as Error);
                 }
             },
@@ -234,7 +261,7 @@ export class MontonioCheckout extends BaseComponent {
 
         while (attempts < MAX_ATTEMPTS) {
             try {
-                console.log('Fetching return URL...');
+                console.log('Fetching return URL');
                 const result = await this.httpService.get<ReturnUrlResponse>(url);
                 attempts++;
                 if (result?.merchantReturnUrl) {
@@ -257,6 +284,9 @@ export class MontonioCheckout extends BaseComponent {
         throw new FailedToFetchReturnUrlError({ attempts });
     }
 
+    /**
+     * Destroy the PaymentAuth component and remove it from success/failure subscriptions
+     */
     private cleanupPaymentAuth(): void {
         if (this.paymentAuth) {
             // Remove the PaymentAuth iframe from the payment completion/failure subscriptions

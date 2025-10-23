@@ -3,13 +3,44 @@ description:
 globs: 
 alwaysApply: true
 ---
+## Project Structure & Naming
+
 - Develop this front-end SDK with the components/services pattern, inspired by Angular
 - Use PascalCase for component and service class names and for the directories and main file names in utils. Acronyms can be upper case
 - For services, the name of the class should end with the "Service" suffix, but the directory and the main TypeScript file should be named with just the plain name. Example (class, directory, file): HTTPService, HTTP, HTTP.ts
 - For components, the name of the directory and the main TypeScript file is the same as the class name and in PascalCase. Example (class, directory, file): Iframe, Iframe, Iframe.ts
 - For utils, use PascalCase for the directory and main file name. Example: (directory, file): DOM, DOM.ts. Utils should generally export reusable functions, not classes.
-- Only add JSDoc comments to the public API of the library. You can add comments to private methods, types or classes, but only if they are very complex or if it's not obvious what they do.
 - Implement services as singletons.
 
-- If a task is too ambiguous, ask clarifying questions before making changes
+## Documentation
+
+- Only add JSDoc comments to the public API of the library. You can add comments to private methods, types or classes, but only if they are very complex or if it's not obvious what they do.
+- Keep README.md in sync with API changes
 - Always read the README.md before answering and making changes to understand the point of this library
+
+## Architecture Patterns
+
+- **Payment results** are provided via callbacks
+  - Required callbacks: `onSuccess` and `onError` in CheckoutOptions
+  - All payment results flow through these callbacks
+  - Callbacks are invoked whether user explicitly calls methods or payment completes automatically
+- **Global listeners** are set up once during initialization
+  - Set up all message subscriptions in `setUpListeners()` method
+  - Subscriptions persist throughout component lifecycle
+  - Avoid creating/destroying subscriptions on each method call
+- **MessagingService** manages iframe communication
+  - Each component gets its own MessagingService instance for separation
+  - Subscriptions can have multiple iframe sources (main + PaymentAuth)
+  - Use `addIframeToSubscription()` to add sources, `removeIframeFromSubscription()` to clean them up
+
+## State Management
+
+- Track form validity with `isValid` property (updated via `CHECKOUT_PAYMENT_FORM_CHANGED`)
+- Synchronous validation (`validateOrReject()`) checks `isValid` property instead of waiting for messages
+- Keep validation simple - throw errors synchronously when invalid
+
+## Best Practices
+
+- If a task is too ambiguous, ask clarifying questions before making changes
+- Prefer simplicity over complexity - if there's a simpler way, take it
+- Clean up resources (iframes, subscriptions) when components are destroyed
