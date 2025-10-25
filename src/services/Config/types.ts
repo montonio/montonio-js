@@ -6,6 +6,7 @@ export interface EnvironmentVariables {
         'prelive-production': string;
         development: string;
     };
+    datadogClientToken: string;
 }
 
 export enum Environment {

@@ -1,5 +1,6 @@
 import { datadogLogs } from '@datadog/browser-logs';
-import { Environment } from '../Config/types';
+import { Environment, EnvironmentOptions } from '../Config/types';
+import { ConfigService } from '../Config/Config';
 
 /**
  * Service for initializing telemetry and logging
@@ -8,8 +9,11 @@ import { Environment } from '../Config/types';
 export class TelemetryService {
     private static _instance: TelemetryService;
     private initialized = false;
+    private readonly configService: ConfigService;
 
-    private constructor() {}
+    private constructor() {
+        this.configService = ConfigService.instance;
+    }
 
     public static get instance(): TelemetryService {
         if (!TelemetryService._instance) {
@@ -24,7 +28,7 @@ export class TelemetryService {
      * @param environment The environment (production or sandbox)
      * @param sessionUuid The session UUID to include in the global context
      */
-    public initialize(environment: string, sessionUuid: string): void {
+    public initialize(environment: EnvironmentOptions, sessionUuid: string): void {
         if (this.initialized) {
             // If already initialized, just update the sessionUuid
             try {
@@ -37,8 +41,9 @@ export class TelemetryService {
         }
 
         try {
+            const clientToken = this.configService.getConfig('datadogClientToken');
             datadogLogs.init({
-                clientToken: 'pubb5b1ffe19aeb16a90d1181fd3e866b83',
+                clientToken: clientToken,
                 site: 'datadoghq.eu',
                 env: environment === Environment.PRODUCTION ? 'live-production' : 'live-sandbox',
                 forwardErrorsToLogs: true,
