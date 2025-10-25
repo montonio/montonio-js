@@ -29,6 +29,7 @@ export class TelemetryService {
             // If already initialized, just update the sessionUuid
             try {
                 datadogLogs.setGlobalContextProperty('sessionUuid', sessionUuid);
+                console.log('MONTONIO-JS: TelemetryService: Session UUID updated:', sessionUuid);
             } catch (error) {
                 console.error('MONTONIO-JS: TelemetryService: Error updating sessionUuid:', error);
             }
