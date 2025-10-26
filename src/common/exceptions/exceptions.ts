@@ -48,12 +48,9 @@ export class FailedToFetchReturnUrlError extends Error {
 }
 
 export class CheckoutOptionsValidationError extends Error {
-    validationErrors: string[];
-
     constructor(errors: string[]) {
         const errorList = errors.map((error, index) => `  ${index + 1}. ${error}`).join('\n');
         super(`Invalid CheckoutOptions provided:\n${errorList}\n\nPlease fix these validation errors and try again.`);
         this.name = ErrorEnum.CHECKOUT_OPTIONS_VALIDATION_ERROR;
-        this.validationErrors = errors;
     }
 }

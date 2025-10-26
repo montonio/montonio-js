@@ -70,10 +70,6 @@ export function validateCheckoutOptions(options: CheckoutOptions): void {
 export function validateUpdatableCheckoutOptions(options: UpdatableCheckoutOptions): void {
     const errors: string[] = [];
 
-    if (!options) {
-        throw new CheckoutOptionsValidationError(['UpdatableCheckoutOptions object is required']);
-    }
-
     // Validate locale (optional)
     if (options.locale !== undefined && options.locale !== null) {
         const validLocales = Object.values(LocaleEnum);
