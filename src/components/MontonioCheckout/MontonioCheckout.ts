@@ -17,7 +17,7 @@ import {
     PaymentFailedError,
     ValidationError,
 } from '../../common';
-import { TelemetryService } from '../../services';
+import { LoggingService } from '../../services';
 
 export class MontonioCheckout extends BaseComponent {
     public isValid: boolean = false;
@@ -31,7 +31,7 @@ export class MontonioCheckout extends BaseComponent {
         this.options = options;
         this.environment = options.environment || Environment.PRODUCTION;
 
-        TelemetryService.instance.initialize(this.environment, this.options.sessionUuid);
+        LoggingService.instance.initialize(this.environment, this.options.sessionUuid);
 
         console.log('MONTONIO-JS: MontonioCheckout: class created with options:', options);
     }

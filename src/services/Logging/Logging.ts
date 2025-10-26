@@ -6,8 +6,8 @@ import { ConfigService } from '../Config/Config';
  * Service for initializing telemetry and logging
  * Implemented as a singleton
  */
-export class TelemetryService {
-    private static _instance: TelemetryService;
+export class LoggingService {
+    private static _instance: LoggingService;
     private initialized = false;
     private readonly configService: ConfigService;
 
@@ -15,11 +15,11 @@ export class TelemetryService {
         this.configService = ConfigService.instance;
     }
 
-    public static get instance(): TelemetryService {
-        if (!TelemetryService._instance) {
-            TelemetryService._instance = new TelemetryService();
+    public static get instance(): LoggingService {
+        if (!LoggingService._instance) {
+            LoggingService._instance = new LoggingService();
         }
-        return TelemetryService._instance;
+        return LoggingService._instance;
     }
 
     /**
@@ -33,9 +33,9 @@ export class TelemetryService {
             // If already initialized, just update the sessionUuid
             try {
                 datadogLogs.setGlobalContextProperty('sessionUuid', sessionUuid);
-                console.log('MONTONIO-JS: TelemetryService: Session UUID updated:', sessionUuid);
+                console.log('MONTONIO-JS: LoggingService: Session UUID updated:', sessionUuid);
             } catch (error) {
-                console.error('MONTONIO-JS: TelemetryService: Error updating sessionUuid:', error);
+                console.error('MONTONIO-JS: LoggingService: Error updating sessionUuid:', error);
             }
             return;
         }
@@ -57,9 +57,9 @@ export class TelemetryService {
             });
             this.initialized = true;
         } catch (error) {
-            console.error('MONTONIO-JS: TelemetryService: Error initializing Datadog Logs:', error);
+            console.error('MONTONIO-JS: LoggingService: Error initializing Datadog Logs:', error);
         }
     }
 }
 
-export default TelemetryService;
+export default LoggingService;
