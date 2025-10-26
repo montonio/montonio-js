@@ -8,7 +8,7 @@ import {
 import { Iframe } from '../Iframe/Iframe';
 import { PaymentAuth } from '../PaymentAuth/PaymentAuth';
 import { BaseComponent } from '../BaseComponent';
-import { getElement } from '../../utils';
+import { getElement, validateCheckoutOptions, validateUpdatableCheckoutOptions } from '../../utils';
 import { Environment, EnvironmentOptions } from '../../services/Config/types';
 import { MessageTypeEnum } from '../../services/Messaging';
 import {
@@ -34,6 +34,8 @@ export class MontonioCheckout extends BaseComponent {
         LoggingService.instance.initialize(this.environment, this.options.sessionUuid);
 
         console.log('MONTONIO-JS: MontonioCheckout: class created with options:', options);
+
+        validateCheckoutOptions(options);
     }
 
     /**
@@ -76,6 +78,9 @@ export class MontonioCheckout extends BaseComponent {
         if (!this.loaded) {
             throw new MontonioCheckoutNotInitializedError();
         }
+
+        // Validate options before updating
+        validateUpdatableCheckoutOptions(options);
 
         if (options.locale !== undefined) {
             this.options.locale = options.locale;
