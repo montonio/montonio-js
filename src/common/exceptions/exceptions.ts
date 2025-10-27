@@ -3,6 +3,7 @@ import { PaymentFailedMessageData } from '../../services/Messaging';
 export enum ErrorEnum {
     MONTONIO_CHECKOUT_NOT_INITIALIZED = 'MONTONIO_CHECKOUT_NOT_INITIALIZED',
     VALIDATION_ERROR = 'VALIDATION_ERROR',
+    CHECKOUT_OPTIONS_VALIDATION_ERROR = 'CHECKOUT_OPTIONS_VALIDATION_ERROR',
     PAYMENT_FAILED = 'PAYMENT_FAILED',
     FAILED_TO_FETCH_RETURN_URL = 'FAILED_TO_FETCH_RETURN_URL',
 }
@@ -43,5 +44,13 @@ export class FailedToFetchReturnUrlError extends Error {
             The customer should not try again! We will inform you about the payment being paid via webhook.`,
         );
         this.name = ErrorEnum.FAILED_TO_FETCH_RETURN_URL;
+    }
+}
+
+export class CheckoutOptionsValidationError extends Error {
+    constructor(errors: string[]) {
+        const errorList = errors.map((error, index) => `  ${index + 1}. ${error}`).join('\n');
+        super(`Invalid CheckoutOptions provided:\n${errorList}\n\nPlease fix these validation errors and try again.`);
+        this.name = ErrorEnum.CHECKOUT_OPTIONS_VALIDATION_ERROR;
     }
 }
