@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    {
+      "name": "@datadog/browser-logs",
+      "version": "6.22.0",
+      "explanation": "Library for logging browser logs to Datadog. Used for observability of the SDK."
+    }
+  ]
+}
