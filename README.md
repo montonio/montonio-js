@@ -33,7 +33,7 @@ In this case, the library and its components will be available in the global obj
 const { MontonioCheckout } = window.Montonio;
 ```
 
-The following examples use the async/await syntax. If you are using `<script>` tags (e.g. in some PHP-based frameworks), you can use `<script type="module">` to use the async/await syntax. Otherwise, you can use the `then` and `catch` syntax for the same effect.
+The following examples use the async/await syntax. If you are using `<script>` tags (e.g. in some PHP-based frameworks), you can use `<script type="module">` to use the async/await syntax. Alternatively, you can use the `then` and `catch` syntax for the same effect.
 
 # Usage
 
@@ -63,7 +63,6 @@ const checkoutOptions = {
     onError: (error) => {
         // Payment failed or validation error occurred
         console.error('Payment failed:', error);
-        alert('Payment failed. Please try again.');
         // Unlock your checkout form to allow the user to try again
     }
 };
@@ -91,7 +90,9 @@ try {
 
 ### 3. Create the order and submit the payment
 
-Once the user has clicked the "Pay" button in your checkout and you have validated the form, you can create the order and submit the payment. First, you need to create a Montonio Order on your server. Follow the [Create and validate an Order](https://docs.montonio.com/api/stargate/guides/orders) guide to create an order. Make sure you include the session UUID in the order request.
+Once the user has clicked the "Pay" button in your checkout and you have validated the form, you can create the order and submit the payment. First, you need to create a Montonio Order on your server. Follow the [Create and validate an Order](https://docs.montonio.com/api/stargate/guides/orders) guide to create an order.
+
+Make sure you **include the session UUID in the order request**. See the [Order data structure](https://docs.montonio.com/api/stargate/guides/orders#1-order-data-structure) section of the Orders guide for more details.
 
 Once the order is created, you can call the `submitPayment` method on the `MontonioCheckout` instance. 
 
@@ -112,5 +113,3 @@ When the payment completes (successfully or with an error), the appropriate call
 - **`onError(error)`**: Called when payment fails or validation errors occur.
 
 The `returnUrl` is the URL you provided in the backend request to create the order. As per the API documentation, this URL will contain the `order-token` query parameter, which you can use to validate the payment. In most cases, you should redirect the user to the `returnUrl` in your `onSuccess` callback and handle the token validation on that page.
-
-**Note:** The callbacks will be invoked even if the payment completes without explicitly calling `submitPayment()`, for example if the user completes the payment directly within the embedded payment form.

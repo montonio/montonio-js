@@ -17,6 +17,7 @@ export class ConfigService {
                 'prelive-production': import.meta.env.VITE_STARGATE_PRELIVE_PRODUCTION_URL,
                 development: import.meta.env.VITE_STARGATE_DEVELOPMENT_URL,
             },
+            datadogClientToken: import.meta.env.VITE_DATADOG_CLIENT_TOKEN,
         };
     }
 
@@ -27,8 +28,15 @@ export class ConfigService {
         return ConfigService._instance;
     }
 
-    public getConfig(name: keyof EnvironmentVariables, environment: EnvironmentOptions): string {
-        return this.environmentVariables[name][environment];
+    public getConfig(name: keyof EnvironmentVariables, environment?: EnvironmentOptions): string {
+        const config = this.environmentVariables[name];
+        if (typeof config === 'string') {
+            return config;
+        }
+        if (!environment) {
+            throw new Error(`Environment parameter required for config key: ${name}`);
+        }
+        return config[environment];
     }
 }
 
