@@ -1,0 +1,222 @@
+name: Check SBOM for PCI DSS
+
+permissions:
+  contents: write
+
+on:
+  pull_request:
+    branches:
+      - "develop"
+
+jobs:
+  check-software-bill-of-materials-for-pci-dss:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "team-infrastructure@montonio.com"
+          git config --global user.name "Montonio GitHub Actions"
+
+      - name: Sync package.json with software-bill-of-materials.json
+        run: |
+          #!/bin/bash
+          set -e
+          
+          SBOM_FILE="software-bill-of-materials.json"
+          CHANGES_MADE=false
+          
+          echo "🔍 Looking for package.json..."
+          
+          # Extract dependencies from package.json
+          DEPS=$(jq -r '.dependencies // {} | to_entries[] | "\(.key):\(.value)"' package.json)
+          TOTAL_DEPS=$(echo "$DEPS" | wc -l | tr -d ' ')
+
+          echo "📦 Found $TOTAL_DEPS dependencies in package.json"
+
+          # Check for caret (^) or tilde (~) in version strings
+          INVALID_VERSIONS=$(echo "$DEPS" | grep -E '[~^]' || true)
+
+          if [[ -n "$INVALID_VERSIONS" ]]; then
+            echo "❌ Found dependencies with caret (^) or tilde (~) in versions:"
+            echo "$INVALID_VERSIONS" | sed 's/^/  - /'
+            echo ""
+            echo "❌ Action failed: All dependencies must have exact versions (no ^ or ~ allowed)"
+            exit 1
+          fi
+          
+          # Rebuild SBOM file from package.json order, preserving existing explanations
+          echo "🔄 Rebuilding $SBOM_FILE from package.json order..."
+          TEMP_FILE=$(mktemp)
+          
+          # Extract base image from Dockerfile if it exists
+          DOCKERFILE_PATH="ops/docker/Dockerfile"
+          BASE_IMAGE=""
+
+          # Start building the new SBOM file
+          echo '{' > "$TEMP_FILE"
+
+          # Add base image if Dockerfile exists
+          if [[ -f "$DOCKERFILE_PATH" ]]; then
+            BASE_IMAGE=$(grep -i "^FROM " "$DOCKERFILE_PATH" | head -1 | sed 's/FROM //; s/ as .*//' | xargs)
+            echo "🐳 Found base image in $DOCKERFILE_PATH: $BASE_IMAGE"
+
+            # Get existing baseImage explanation if it exists
+            EXISTING_BASE_IMAGE_EXPLANATION=""
+            if [[ -f "$SBOM_FILE" ]]; then
+              EXISTING_BASE_IMAGE_EXPLANATION=$(jq -r '.baseImage.explanation // empty' "$SBOM_FILE")
+            fi
+
+            # Use existing explanation or default TODO for base image
+            if [[ -n "$EXISTING_BASE_IMAGE_EXPLANATION" ]]; then
+              BASE_IMAGE_EXPLANATION="$EXISTING_BASE_IMAGE_EXPLANATION"
+            else
+              BASE_IMAGE_EXPLANATION="TODO: Please provide explanation for this dependency"
+            fi
+
+            # Extract apk packages from Dockerfile
+            APK_PACKAGES=$(grep -iE "RUN\s+apk\s+add" "$DOCKERFILE_PATH" | sed -E 's/.*apk\s+add\s+//i' | sed 's/--no-cache//g' | sed 's/--virtual [^ ]*//g' | sed 's/&&.*//g' | sed 's/\\//g' | tr ' ' '\n' | grep -v '^$' | grep -vE '^(RUN|apk|add)$' | sort -u)
+
+            echo '  "baseImage": {' >> "$TEMP_FILE"
+            echo '    "version": "'"$BASE_IMAGE"'",' >> "$TEMP_FILE"
+            echo '    "explanation": "'"$BASE_IMAGE_EXPLANATION"'",' >> "$TEMP_FILE"
+            echo '    "packages": [' >> "$TEMP_FILE"
+
+            # Add packages array if any apk packages were found
+            if [[ -n "$APK_PACKAGES" ]]; then
+              PACKAGE_COUNT=$(echo "$APK_PACKAGES" | wc -l | tr -d ' ')
+              echo "📦 Found $PACKAGE_COUNT apk packages in $DOCKERFILE_PATH"
+
+              PKG_INDEX=0
+              while IFS= read -r package; do
+                PKG_INDEX=$((PKG_INDEX + 1))
+
+                # Get existing package explanation if it exists
+                EXISTING_PKG_EXPLANATION=""
+                if [[ -f "$SBOM_FILE" ]]; then
+                  EXISTING_PKG_EXPLANATION=$(jq -r --arg pkg "$package" '.baseImage.packages[]? | select(.name == $pkg) | .explanation // empty' "$SBOM_FILE")
+                fi
+
+                # Use existing explanation or default TODO
+                if [[ -n "$EXISTING_PKG_EXPLANATION" ]]; then
+                  PKG_EXPLANATION="$EXISTING_PKG_EXPLANATION"
+                else
+                  PKG_EXPLANATION="TODO: Please provide explanation for this package"
+                  echo "📝 New apk package detected: $package"
+                fi
+
+                # Add package entry
+                if [[ $PKG_INDEX -lt $PACKAGE_COUNT ]]; then
+                  # Not the last item - add comma
+                  echo '      {' >> "$TEMP_FILE"
+                  echo '        "name": "'"$package"'",' >> "$TEMP_FILE"
+                  echo '        "explanation": "'"$PKG_EXPLANATION"'"' >> "$TEMP_FILE"
+                  echo '      },' >> "$TEMP_FILE"
+                else
+                  # Last item - no comma
+                  echo '      {' >> "$TEMP_FILE"
+                  echo '        "name": "'"$package"'",' >> "$TEMP_FILE"
+                  echo '        "explanation": "'"$PKG_EXPLANATION"'"' >> "$TEMP_FILE"
+                  echo '      }' >> "$TEMP_FILE"
+                fi
+              done <<< "$APK_PACKAGES"
+            fi
+
+            echo '    ]' >> "$TEMP_FILE"
+            echo '  },' >> "$TEMP_FILE"
+          fi
+
+          echo '  "dependencies": [' >> "$TEMP_FILE"
+          
+          # Loop through dependencies in package.json order
+          DEP_COUNT=0
+          while IFS=: read -r name version; do
+            DEP_COUNT=$((DEP_COUNT + 1))
+          
+            # Get existing explanation if it exists
+            EXISTING_EXPLANATION=""
+            if [[ -f "$SBOM_FILE" ]]; then
+              EXISTING_EXPLANATION=$(jq -r --arg name "$name" '.dependencies[] | select(.name == $name) | .explanation // empty' "$SBOM_FILE")
+            fi
+          
+            # Use existing explanation or default TODO
+            if [[ -n "$EXISTING_EXPLANATION" ]]; then
+              EXPLANATION="$EXISTING_EXPLANATION"
+            else
+              EXPLANATION="TODO: Please provide explanation for this dependency"
+              echo "📝 New dependency detected: $name"
+            fi
+          
+            # Add dependency entry
+            if [[ $DEP_COUNT -lt $TOTAL_DEPS ]]; then
+              # Not the last item - add comma
+              echo "    {" >> "$TEMP_FILE"
+              echo "      \"name\": \"$name\"," >> "$TEMP_FILE"
+              echo "      \"version\": \"$version\"," >> "$TEMP_FILE"
+              echo "      \"explanation\": \"$EXPLANATION\"" >> "$TEMP_FILE"
+              echo "    }," >> "$TEMP_FILE"
+            else
+              # Last item - no comma
+              echo "    {" >> "$TEMP_FILE"
+              echo "      \"name\": \"$name\"," >> "$TEMP_FILE"
+              echo "      \"version\": \"$version\"," >> "$TEMP_FILE"
+              echo "      \"explanation\": \"$EXPLANATION\"" >> "$TEMP_FILE"
+              echo "    }" >> "$TEMP_FILE"
+            fi
+          done <<< "$DEPS"
+          
+          echo '  ]' >> "$TEMP_FILE"
+          echo '}' >> "$TEMP_FILE"
+          
+          # Check if file changed
+          if [[ ! -f "$SBOM_FILE" ]] || ! cmp -s "$SBOM_FILE" "$TEMP_FILE"; then
+            mv "$TEMP_FILE" "$SBOM_FILE"
+            echo "✅ Updated $SBOM_FILE with $TOTAL_DEPS dependencies in package.json order"
+            CHANGES_MADE=true
+          else
+            rm "$TEMP_FILE"
+            echo "✅ $SBOM_FILE already up to date"
+          fi
+          
+          # Commit and push changes if any were made
+          if [[ "$CHANGES_MADE" = true ]]; then
+            git add "$SBOM_FILE"
+            git commit -m "chore: updated software-bill-of-materials.json"
+          
+            # Pull and push to the current branch
+            BRANCH_NAME=$(echo "${{ github.head_ref }}" | sed 's/refs\/heads\///')
+            git pull origin "$BRANCH_NAME" --rebase
+            git push origin "HEAD:$BRANCH_NAME"
+          
+            echo "📝 Please review the updated $SBOM_FILE and fill in explanations for any TODO items"
+          fi
+          
+          # Check for empty explanations and always fail if found
+          EMPTY_DEPENDENCY_EXPLANATIONS=$(jq -r '.dependencies[] | select(.explanation == "" or .explanation == null or (.explanation | test("TODO"))) | .name' "$SBOM_FILE")
+
+          if [[ -n "$EMPTY_DEPENDENCY_EXPLANATIONS" ]]; then
+            EMPTY_COUNT=$(echo "$EMPTY_DEPENDENCY_EXPLANATIONS" | wc -l | tr -d ' ')
+            echo "❌ $EMPTY_COUNT dependencies have missing or incomplete explanations:"
+            echo "$EMPTY_DEPENDENCY_EXPLANATIONS" | sed 's/^/  - /'
+            echo ""
+            echo "❌ Action failed: All dependencies must have proper explanations"
+            exit 1
+          fi
+
+          # Check for empty package explanations in baseImage
+          EMPTY_PACKAGE_EXPLANATIONS=$(jq -r '.baseImage.packages[]? | select(.explanation == "" or .explanation == null or (.explanation | test("TODO"))) | .name' "$SBOM_FILE")
+
+          if [[ -n "$EMPTY_PACKAGE_EXPLANATIONS" ]]; then
+            EMPTY_PKG_COUNT=$(echo "$EMPTY_PACKAGE_EXPLANATIONS" | wc -l | tr -d ' ')
+            echo "❌ $EMPTY_PKG_COUNT apk packages have missing or incomplete explanations:"
+            echo "$EMPTY_PACKAGE_EXPLANATIONS" | sed 's/^/  - /'
+            echo ""
+            echo "❌ Action failed: All apk packages must have proper explanations"
+            exit 1
+          fi
+          
+          TRACKED_COUNT=$(jq '.dependencies | length' "$SBOM_FILE")
+          echo "✅ Finished syncing software-bill-of-materials.json with package.json"

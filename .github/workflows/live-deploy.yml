@@ -95,6 +95,19 @@ jobs:
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths '/${{ steps.version.outputs.major_version }}.x.x/*' '/${{ steps.version.outputs.version }}/*'
 
+      - name: Install Datadog CI
+        run: npm install -g @datadog/datadog-ci
+
+      - name: Upload source maps to Datadog
+        run: |
+          datadog-ci sourcemaps upload dist \
+            --service montonio-js \
+            --release-version ${{ steps.version.outputs.version }} \
+            --minified-path-prefix https://js.montonio.com/${{ steps.version.outputs.major_version }}.x.x/
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_SITE: datadoghq.eu
+
       - name: Create deployment summary
         run: |
           echo "## Live Deployment Summary" >> $GITHUB_STEP_SUMMARY
