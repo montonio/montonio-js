@@ -105,8 +105,8 @@ jobs:
             --release-version ${{ steps.version.outputs.version }} \
             --minified-path-prefix https://js.montonio.com/${{ steps.version.outputs.major_version }}.x.x/
         env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY }}
-          DD_SITE: datadoghq.eu
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_SITE: datadoghq.eu
 
       - name: Create deployment summary
         run: |
