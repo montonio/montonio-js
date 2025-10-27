@@ -1,5 +1,8 @@
 name: Check SBOM for PCI DSS
 
+permissions:
+  contents: write
+
 on:
   pull_request:
     branches:
