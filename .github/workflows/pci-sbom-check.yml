@@ -6,7 +6,7 @@ permissions:
 on:
   pull_request:
     branches:
-      - 'develop'
+      - "develop"
 
 jobs:
   check-software-bill-of-materials-for-pci-dss:
