@@ -1,0 +1,14 @@
+name: Check SBOM for PCI DSS
+
+permissions:
+  contents: write
+
+on:
+  pull_request:
+    branches:
+      - 'develop'
+
+jobs:
+  check-software-bill-of-materials-for-pci-dss:
+    uses: montonio/github-actions/.github/workflows/pci-sbom-check.yml@main
+    secrets: inherit
