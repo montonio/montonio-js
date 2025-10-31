@@ -55,6 +55,9 @@ import { MontonioCheckout } from '@montonio/montonio-js'; // ES Module usage. Se
 const checkoutOptions = {
     sessionUuid: 'session-uuid', // The UUID of the session created on your server
     environment: 'sandbox', // Defaults to 'production'
+    locale: 'en',   // The language of the payment gateway. Defaults to your store default language. 
+                    // Available values are ('en', 'et', 'lt', 'lv', 'pl', 'ru', 'fi')
+                    // TypeScript users can use LocaleEnum.EN (or ET, LT, etc.) by importing LocaleEnum from @montonio/montonio-js
     onSuccess: (result) => {
         // Payment completed successfully
         // Redirect to the thank you page
