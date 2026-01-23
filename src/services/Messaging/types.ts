@@ -24,6 +24,7 @@ export enum MessageTypeEnum {
     CHECKOUT_VALIDATE_FIELDS = 'montonio:checkout.validateFields',
     CHECKOUT_VALIDATE_FIELDS_RESULT = 'montonio:checkout.validateFieldsResult',
     CHECKOUT_PAYMENT_FORM_CHANGED = 'montonio:checkout.paymentFormChanged',
+    CHECKOUT_REDIRECT = 'montonio:checkout.redirect',
 }
 
 export type Messages =
@@ -93,6 +94,12 @@ export type Messages =
           name: MessageTypeEnum.CHECKOUT_PAYMENT_FORM_CHANGED;
           payload: {
               isValid: boolean;
+          };
+      }
+    | {
+          name: MessageTypeEnum.CHECKOUT_REDIRECT;
+          payload: {
+              redirectUrl: string;
           };
       };
 
