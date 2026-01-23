@@ -148,6 +148,17 @@ export class MontonioCheckout extends BaseComponent {
         this.setUpPaymentFailedListener();
         this.setUpValidationListener();
         this.setUpPaymentAuthListener();
+        this.setUpRedirectListener();
+    }
+
+    private setUpRedirectListener(): void {
+        this.messagingService.subscribe(
+            MessageTypeEnum.CHECKOUT_REDIRECT,
+            (message) => {
+                window.location.href = message.payload.redirectUrl;
+            },
+            this.iframe,
+        );
     }
 
     /**
