@@ -11,10 +11,13 @@ We support installation both as a JavaScript module (ESM) and as an embedded scr
 ## ES Module
 
 1. Install the package using npm or yarn:
+
 ```bash
 npm install @montonio/montonio-js
 ```
+
 2. Import the library in your JavaScript code:
+
 ```javascript
 import { MontonioCheckout } from '@montonio/montonio-js';
 ```
@@ -55,9 +58,9 @@ import { MontonioCheckout } from '@montonio/montonio-js'; // ES Module usage. Se
 const checkoutOptions = {
     sessionUuid: 'session-uuid', // The UUID of the session created on your server
     environment: 'sandbox', // Defaults to 'production'
-    locale: 'en',   // The language of the payment gateway. Defaults to your store default language. 
-                    // Available values are ('en', 'et', 'lt', 'lv', 'pl', 'ru', 'fi')
-                    // TypeScript users can use LocaleEnum.EN (or ET, LT, etc.) by importing LocaleEnum from @montonio/montonio-js
+    locale: 'en', // The language of the payment gateway. Defaults to your store default language.
+    // Available values are ('en', 'et', 'lt', 'lv', 'pl', 'ru', 'fi')
+    // TypeScript users can use LocaleEnum.EN (or ET, LT, etc.) by importing LocaleEnum from @montonio/montonio-js
     onSuccess: (result) => {
         // Payment completed successfully
         // Redirect to the thank you page
@@ -67,7 +70,13 @@ const checkoutOptions = {
         // Payment failed or validation error occurred
         console.error('Payment failed:', error);
         // Unlock your checkout form to allow the user to try again
-    }
+    },
+    onActionRequired: (payload) => {
+        // Optional. Called when additional user action is required (e.g. 3DS, OTP).
+        // Use it to lock the pay button or show an overlay. When payload.action is
+        // 'scrollIntoView', scroll or focus the payment area so the user can complete
+        // authentication there.
+    },
 };
 
 const montonioCheckout = new MontonioCheckout(checkoutOptions);
@@ -97,7 +106,7 @@ Once the user has clicked the "Pay" button in your checkout and you have validat
 
 Make sure you **include the session UUID in the order request**. See the [Order data structure](https://docs.montonio.com/api/stargate/guides/orders#1-order-data-structure) section of the Orders guide for more details.
 
-Once the order is created, you can call the `submitPayment` method on the `MontonioCheckout` instance. 
+Once the order is created, you can call the `submitPayment` method on the `MontonioCheckout` instance.
 
 Immediately after the user clicks "Pay" and even before you create the Montonio order, lock your checkout and prevent the user from making any further changes. Show a loading indicator to the user while the order is being created and while the payment is being submitted.
 
@@ -109,10 +118,12 @@ montonioCheckout.submitPayment();
 // The onError callback will be invoked if payment fails
 ```
 
-The `MontonioCheckout.submitPayment()` method will initiate the payment submission. In case a payment method requires additional user authentication (such as 3DS for card payments), a modal will pop up to handle the authentication. 
+The `MontonioCheckout.submitPayment()` method will initiate the payment submission. In case a payment method requires additional user authentication (such as 3DS for card payments), a modal will pop up to handle the authentication.
 
 When the payment completes (successfully or with an error), the appropriate callback you defined during initialization will be invoked:
+
 - **`onSuccess(result)`**: Called when payment is successful. The result contains `paymentStatus`, `orderToken`, and `returnUrl` fields.
 - **`onError(error)`**: Called when payment fails or validation errors occur.
+- **`onActionRequired(payload)`** (Optional): Called when additional user action is required (e.g. authentication such as 3DS or OTP). Use it to lock the pay button or show an overlay. The `payload` has `action` (e.g. `'scrollIntoView'`); when it is `'scrollIntoView'`, scroll or focus the payment area so the user can complete authentication there.
 
 The `returnUrl` is the URL you provided in the backend request to create the order. As per the API documentation, this URL will contain the `order-token` query parameter, which you can use to validate the payment. In most cases, you should redirect the user to the `returnUrl` in your `onSuccess` callback and handle the token validation on that page.
