@@ -73,7 +73,7 @@ const checkoutOptions = {
     },
     onActionRequired: (payload) => {
         // Optional. Called when additional user action is required (e.g. authentication)
-        // payload.type is the kind of action (e.g. 'AUTHENTICATION').
+        // payload.type is the type of action (e.g. 'AUTHENTICATION').
     },
 };
 
