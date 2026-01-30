@@ -1,4 +1,4 @@
-import { ActionRequiredType, LocaleEnum } from '../../components/MontonioCheckout/types';
+import { ActionRequiredEnum, LocaleEnum } from '../../components/MontonioCheckout/types';
 
 export interface MessageSubscription {
     handler: (message: Messages) => void;
@@ -106,7 +106,7 @@ export type Messages =
     | {
           name: MessageTypeEnum.CHECKOUT_ON_ACTION_REQUIRED;
           payload: {
-              type: ActionRequiredType;
+              type: ActionRequiredEnum;
           };
       };
 
