@@ -1,4 +1,4 @@
-import { ActionRequiredEnum, LocaleEnum } from '../../components/MontonioCheckout/types';
+import { ActionRequiredTypeEnum, LocaleEnum } from '../../components/MontonioCheckout/types';
 
 export interface MessageSubscription {
     handler: (message: Messages) => void;
@@ -25,7 +25,7 @@ export enum MessageTypeEnum {
     CHECKOUT_VALIDATE_FIELDS_RESULT = 'montonio:checkout.validateFieldsResult',
     CHECKOUT_PAYMENT_FORM_CHANGED = 'montonio:checkout.paymentFormChanged',
     CHECKOUT_REDIRECT = 'montonio:checkout.redirect',
-    CHECKOUT_ON_ACTION_REQUIRED = 'montonio:checkout.actionRequired',
+    CHECKOUT_ACTION_REQUIRED = 'montonio:checkout.actionRequired',
 }
 
 export type Messages =
@@ -104,9 +104,9 @@ export type Messages =
           };
       }
     | {
-          name: MessageTypeEnum.CHECKOUT_ON_ACTION_REQUIRED;
+          name: MessageTypeEnum.CHECKOUT_ACTION_REQUIRED;
           payload: {
-              type: ActionRequiredEnum;
+              type: ActionRequiredTypeEnum;
           };
       };
 
