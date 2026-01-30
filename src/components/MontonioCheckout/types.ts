@@ -39,15 +39,15 @@ export interface CheckoutOptions {
 
 export type UpdatableCheckoutOptions = Pick<Partial<CheckoutOptions>, 'locale'>;
 
-/**
- * Type of action required: e.g. authentication (3DS, OTP, etc.). Use to lock pay button or show overlay.
- */
-export enum ActionRequiredTypeEnum {
-    AUTHENTICATION = 'authentication',
+export enum ActionRequiredActionEnum {
+    /*
+     * Scroll the payment area into view so the user can complete authentication there
+     */
+    SCROLL_INTO_VIEW = 'scrollIntoView',
 }
 
 export interface ActionRequiredPayload {
-    type: ActionRequiredTypeEnum;
+    action: ActionRequiredActionEnum;
 }
 
 /**

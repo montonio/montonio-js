@@ -72,8 +72,10 @@ const checkoutOptions = {
         // Unlock your checkout form to allow the user to try again
     },
     onActionRequired: (payload) => {
-        // Optional. Called when additional user action is required (e.g. authentication)
-        // payload.type is the type of action (e.g. 'AUTHENTICATION').
+        // Optional. Called when additional user action is required (e.g. 3DS, OTP).
+        // Use it to lock the pay button or show an overlay. When payload.action is
+        // 'scrollIntoView', scroll or focus the payment area so the user can complete
+        // authentication there.
     },
 };
 
@@ -122,6 +124,6 @@ When the payment completes (successfully or with an error), the appropriate call
 
 - **`onSuccess(result)`**: Called when payment is successful. The result contains `paymentStatus`, `orderToken`, and `returnUrl` fields.
 - **`onError(error)`**: Called when payment fails or validation errors occur.
-- **`onActionRequired(payload)`** (Optional): Called when additional user action is required (e.g. authentication such as 3DS or OTP). Use it to lock the Pay button or show an overlay. The `payload` has `type` (e.g. `'AUTHENTICATION'`).
+- **`onActionRequired(payload)`** (Optional): Called when additional user action is required (e.g. authentication such as 3DS or OTP). Use it to lock the pay button or show an overlay. The `payload` has `action` (e.g. `'scrollIntoView'`); when it is `'scrollIntoView'`, scroll or focus the payment area so the user can complete authentication there.
 
 The `returnUrl` is the URL you provided in the backend request to create the order. As per the API documentation, this URL will contain the `order-token` query parameter, which you can use to validate the payment. In most cases, you should redirect the user to the `returnUrl` in your `onSuccess` callback and handle the token validation on that page.
