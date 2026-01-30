@@ -1,4 +1,5 @@
 import {
+    ActionRequiredPayload,
     CheckoutOptions,
     GatewayUrlResponse,
     PaymentResult,
@@ -147,6 +148,7 @@ export class MontonioCheckout extends BaseComponent {
         this.setUpPaymentCompletedListener();
         this.setUpPaymentFailedListener();
         this.setUpValidationListener();
+        this.setUpActionRequiredListener();
         this.setUpPaymentAuthListener();
         this.setUpRedirectListener();
     }
@@ -156,6 +158,21 @@ export class MontonioCheckout extends BaseComponent {
             MessageTypeEnum.CHECKOUT_REDIRECT,
             (message) => {
                 window.location.href = message.payload.redirectUrl;
+            },
+            this.iframe,
+        );
+    }
+
+    /**
+     * Listen for action required (e.g. 3DS started)
+     */
+    private setUpActionRequiredListener(): void {
+        this.messagingService.subscribe(
+            MessageTypeEnum.ON_ACTION_REQUIRED,
+            (message) => {
+                this.handleActionRequired({
+                    type: message.payload.type,
+                });
             },
             this.iframe,
         );
@@ -344,5 +361,13 @@ export class MontonioCheckout extends BaseComponent {
     private handlePaymentError(error: Error): void {
         this.options.onError(error);
         console.error('MONTONIO-JS: handlePaymentError: onError callback called with error:', error);
+    }
+
+    /**
+     * Handle action required - calls the optional onActionRequired callback
+     */
+    private handleActionRequired(payload: ActionRequiredPayload): void {
+        this.options.onActionRequired?.(payload);
+        console.log('MONTONIO-JS: handleActionRequired: onActionRequired callback called with payload:', payload);
     }
 }

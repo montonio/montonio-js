@@ -29,9 +29,24 @@ export interface CheckoutOptions {
      * Called when a payment fails or validation errors occur
      */
     onError: (error: Error) => void;
+
+    /**
+     * (Optional)
+     * Called when the payment requires additional user action (e.g. 3DS, redirect)
+     */
+    onActionRequired?: (payload: ActionRequiredPayload) => void;
 }
 
 export type UpdatableCheckoutOptions = Pick<Partial<CheckoutOptions>, 'locale'>;
+
+export type ActionRequiredType = 'authentication';
+
+/**
+ * Kind of action: e.g. 'authentication' (3DS, OTP, etc.). Use to lock pay button or show overlay.
+ */
+export interface ActionRequiredPayload {
+    type: ActionRequiredType;
+}
 
 /**
  * Checkout session data returned from Stargate
