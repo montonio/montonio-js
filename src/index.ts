@@ -1,8 +1,17 @@
 import { ErrorEnum } from './common';
 import { MontonioCheckout } from './components';
-import type { CheckoutOptions } from './components/MontonioCheckout/types';
-import { LocaleEnum } from './components/MontonioCheckout/types';
+import type { ActionRequiredPayload, CheckoutOptions } from './components/MontonioCheckout/types';
+import { ActionRequiredActionEnum, LocaleEnum } from './components/MontonioCheckout/types';
 import { Environment } from './services/Config/types';
 import { MessageTypeEnum } from './services/Messaging';
 
-export { CheckoutOptions, MontonioCheckout, Environment, MessageTypeEnum, LocaleEnum, ErrorEnum };
+export {
+    ActionRequiredPayload,
+    ActionRequiredActionEnum,
+    CheckoutOptions,
+    MontonioCheckout,
+    Environment,
+    MessageTypeEnum,
+    LocaleEnum,
+    ErrorEnum,
+};
