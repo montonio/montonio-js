@@ -168,7 +168,7 @@ export class MontonioCheckout extends BaseComponent {
      */
     private setUpActionRequiredListener(): void {
         this.messagingService.subscribe(
-            MessageTypeEnum.ON_ACTION_REQUIRED,
+            MessageTypeEnum.CHECKOUT_ON_ACTION_REQUIRED,
             (message) => {
                 this.handleActionRequired({
                     type: message.payload.type,
