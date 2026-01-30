@@ -365,7 +365,9 @@ export class MontonioCheckout extends BaseComponent {
      * Handle action required - calls the optional onActionRequired callback
      */
     private handleActionRequired(payload: ActionRequiredPayload): void {
-        this.options.onActionRequired?.(payload);
-        console.log('MONTONIO-JS: handleActionRequired: onActionRequired callback called with payload:', payload);
+        if (this.options.onActionRequired) {
+            this.options.onActionRequired(payload);
+            console.log('MONTONIO-JS: handleActionRequired: onActionRequired callback called with payload:', payload);
+        }
     }
 }
