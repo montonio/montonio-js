@@ -34,12 +34,9 @@ export class MessagingService {
             throw new Error(`Subscription for '${messageType}' already exists`);
         }
 
-        // Convert Iframe object to Window object
-        const windowSource = this.extractWindowFromIframe(iframe);
-
         this.subscriptions.set(messageType, {
             handler: handler as (message: Messages) => void,
-            sources: [windowSource],
+            sources: [iframe],
         });
     }
 
@@ -52,10 +49,8 @@ export class MessagingService {
             throw new Error(`Subscription for '${messageType}' not found`);
         }
 
-        const windowSource = this.extractWindowFromIframe(iframe);
-
-        if (!subscription.sources.includes(windowSource)) {
-            subscription.sources.push(windowSource);
+        if (!subscription.sources.includes(iframe)) {
+            subscription.sources.push(iframe);
         }
     }
 
@@ -129,9 +124,7 @@ export class MessagingService {
             throw new Error(`Subscription for '${messageType}' not found`);
         }
 
-        const windowSource = this.extractWindowFromIframe(iframe);
-
-        subscription.sources = subscription.sources.filter((source) => source !== windowSource);
+        subscription.sources = subscription.sources.filter((source) => source !== iframe);
 
         // Delete the subscription if it has no sources left
         if (subscription.sources.length === 0) {
@@ -159,8 +152,16 @@ export class MessagingService {
                         return;
                     }
 
-                    // Check if the event source matches any of the specified sources
-                    const sourceMatches = subscription.sources.some((source) => source === event.source);
+                    // Check if the event source matches any of the specified sources.
+                    // contentWindow is resolved lazily here — the iframe must be loaded
+                    // to have sent a message, so getContentWindow() is safe at this point.
+                    const sourceMatches = subscription.sources.some((source) => {
+                        try {
+                            return source.getContentWindow() === event.source;
+                        } catch {
+                            return false;
+                        }
+                    });
                     if (!sourceMatches) {
                         return;
                     }
