@@ -19,11 +19,11 @@ export class MessagingService {
     }
 
     /**
-     * Subscribe to messages of a specific type from a specific source iframe
-     * @param messageType The message type to listen for
-     * @param handler Handler function to call when the message is received
-     * @param iframe Iframe object to listen to
-     * @returns Subscription ID that can be used to unsubscribe
+     * Subscribe to messages of a specific type from a specific source iframe.
+     * @param messageType The message type to listen for.
+     * @param handler Handler function to call when the message is received.
+     * @param iframe Iframe object to listen to.
+     * @returns Subscription ID that can be used to unsubscribe.
      */
     public subscribe<T extends MessageTypeEnum>(
         messageType: T,
