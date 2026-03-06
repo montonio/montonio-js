@@ -93,7 +93,7 @@ export class MessagingService {
      * Post a message to a specific iframe window
      */
     public postMessage(iframe: Iframe, messageData: Messages, targetOrigin: string = '*'): void {
-        const target = this.extractWindowFromIframe(iframe);
+        const target = iframe.getContentWindow();
         target.postMessage(messageData, targetOrigin);
     }
 
@@ -181,12 +181,5 @@ export class MessagingService {
                 console.error('Error processing iframe message:', error);
             }
         });
-    }
-
-    /**
-     * Extract the window source from the Iframe object
-     */
-    private extractWindowFromIframe(iframe: Iframe): Window {
-        return iframe.getContentWindow();
     }
 }
