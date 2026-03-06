@@ -158,7 +158,11 @@ export class MessagingService {
                     const sourceMatches = subscription.sources.some((source) => {
                         try {
                             return source.getContentWindow() === event.source;
-                        } catch {
+                        } catch (error) {
+                            console.error(
+                                'MONTONIO-JS: MessagingService: Failed to resolve contentWindow for source:',
+                                error,
+                            );
                             return false;
                         }
                     });
