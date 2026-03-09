@@ -6,7 +6,7 @@ import { ConfigService } from '../Config/Config';
  * Thin logger wrapper that writes to both console and Datadog explicitly.
  * Datadog does NOT forward console logs — only calls through this logger reach Datadog.
  *
- * Usage: private readonly logger = new MontonioLogger(MontonioCheckout.name);
+ * Usage: private readonly logger = new MontonioLogger(this.constructor.name);
  */
 export class MontonioLogger {
     constructor(private readonly context: string) {}
