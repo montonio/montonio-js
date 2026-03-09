@@ -19,11 +19,11 @@ export class MessagingService {
     }
 
     /**
-     * Subscribe to messages of a specific type from a specific source iframe
-     * @param messageType The message type to listen for
-     * @param handler Handler function to call when the message is received
-     * @param iframe Iframe object to listen to
-     * @returns Subscription ID that can be used to unsubscribe
+     * Subscribe to messages of a specific type from a specific source iframe.
+     * @param messageType The message type to listen for.
+     * @param handler Handler function to call when the message is received.
+     * @param iframe Iframe object to listen to.
+     * @returns Subscription ID that can be used to unsubscribe.
      */
     public subscribe<T extends MessageTypeEnum>(
         messageType: T,
@@ -34,12 +34,9 @@ export class MessagingService {
             throw new Error(`Subscription for '${messageType}' already exists`);
         }
 
-        // Convert Iframe object to Window object
-        const windowSource = this.extractWindowFromIframe(iframe);
-
         this.subscriptions.set(messageType, {
             handler: handler as (message: Messages) => void,
-            sources: [windowSource],
+            sources: [iframe],
         });
     }
 
@@ -52,10 +49,8 @@ export class MessagingService {
             throw new Error(`Subscription for '${messageType}' not found`);
         }
 
-        const windowSource = this.extractWindowFromIframe(iframe);
-
-        if (!subscription.sources.includes(windowSource)) {
-            subscription.sources.push(windowSource);
+        if (!subscription.sources.includes(iframe)) {
+            subscription.sources.push(iframe);
         }
     }
 
@@ -98,7 +93,7 @@ export class MessagingService {
      * Post a message to a specific iframe window
      */
     public postMessage(iframe: Iframe, messageData: Messages, targetOrigin: string = '*'): void {
-        const target = this.extractWindowFromIframe(iframe);
+        const target = iframe.getContentWindow();
         target.postMessage(messageData, targetOrigin);
     }
 
@@ -129,9 +124,7 @@ export class MessagingService {
             throw new Error(`Subscription for '${messageType}' not found`);
         }
 
-        const windowSource = this.extractWindowFromIframe(iframe);
-
-        subscription.sources = subscription.sources.filter((source) => source !== windowSource);
+        subscription.sources = subscription.sources.filter((source) => source !== iframe);
 
         // Delete the subscription if it has no sources left
         if (subscription.sources.length === 0) {
@@ -159,8 +152,20 @@ export class MessagingService {
                         return;
                     }
 
-                    // Check if the event source matches any of the specified sources
-                    const sourceMatches = subscription.sources.some((source) => source === event.source);
+                    // Check if the event source matches any of the specified sources.
+                    // contentWindow is resolved lazily here — the iframe must be loaded
+                    // to have sent a message, so getContentWindow() is safe at this point.
+                    const sourceMatches = subscription.sources.some((source) => {
+                        try {
+                            return source.getContentWindow() === event.source;
+                        } catch (error) {
+                            console.error(
+                                'MONTONIO-JS: MessagingService: Failed to resolve contentWindow for source:',
+                                error,
+                            );
+                            return false;
+                        }
+                    });
                     if (!sourceMatches) {
                         return;
                     }
@@ -176,12 +181,5 @@ export class MessagingService {
                 console.error('Error processing iframe message:', error);
             }
         });
-    }
-
-    /**
-     * Extract the window source from the Iframe object
-     */
-    private extractWindowFromIframe(iframe: Iframe): Window {
-        return iframe.getContentWindow();
     }
 }
