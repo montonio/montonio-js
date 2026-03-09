@@ -3,6 +3,31 @@ import { Environment, EnvironmentOptions } from '../Config/types';
 import { ConfigService } from '../Config/Config';
 
 /**
+ * Thin logger wrapper that writes to both console and Datadog explicitly.
+ * Datadog does NOT forward console logs — only calls through this logger reach Datadog.
+ *
+ * Usage: private readonly logger = new MontonioLogger(MontonioCheckout.name);
+ */
+export class MontonioLogger {
+    constructor(private readonly context?: string) {}
+
+    info(message: string, data?: object): void {
+        console.log(`${message}`, data);
+        datadogLogs.logger.info(message, { context: this.context, ...data });
+    }
+
+    warn(message: string, data?: object): void {
+        console.warn(`${message}`, data);
+        datadogLogs.logger.warn(message, { context: this.context, ...data });
+    }
+
+    error(message: string, data?: object): void {
+        console.error(`${message}`, data);
+        datadogLogs.logger.error(message, { context: this.context, ...data });
+    }
+}
+
+/**
  * Service for initializing telemetry and logging
  * Implemented as a singleton
  */
@@ -10,6 +35,7 @@ export class LoggingService {
     private static _instance: LoggingService;
     private initialized = false;
     private readonly configService: ConfigService;
+    private readonly logger = new MontonioLogger(LoggingService.name);
 
     private constructor() {
         this.configService = ConfigService.instance;
@@ -30,12 +56,11 @@ export class LoggingService {
      */
     public initialize(environment: EnvironmentOptions, sessionUuid: string): void {
         if (this.initialized) {
-            // If already initialized, just update the sessionUuid
             try {
                 datadogLogs.setGlobalContextProperty('sessionUuid', sessionUuid);
-                console.log('MONTONIO-JS: LoggingService: Session UUID updated:', sessionUuid);
+                this.logger.info(`Updated sessionUuid to [${sessionUuid}]`, { sessionUuid });
             } catch (error) {
-                console.error('MONTONIO-JS: LoggingService: Error updating sessionUuid:', error);
+                this.logger.error(`Error updating sessionUuid to [${sessionUuid}]`, { error });
             }
             return;
         }
@@ -46,18 +71,19 @@ export class LoggingService {
                 clientToken: clientToken,
                 site: 'datadoghq.eu',
                 env: environment === Environment.PRODUCTION ? 'live-production' : 'live-sandbox',
-                forwardErrorsToLogs: true,
                 service: 'montonio-js',
                 version: __MONTONIO_JS_VERSION__,
                 silentMultipleInit: true,
-                forwardConsoleLogs: 'all',
+                forwardErrorsToLogs: false,
+                forwardConsoleLogs: [],
             });
             datadogLogs.setGlobalContext({
                 sessionUuid: sessionUuid,
             });
             this.initialized = true;
         } catch (error) {
-            console.error('MONTONIO-JS: LoggingService: Error initializing Datadog Logs:', error);
+            // datadogLogs is not yet available, fall back to console
+            console.error('Error initializing Datadog logs', error);
         }
     }
 }

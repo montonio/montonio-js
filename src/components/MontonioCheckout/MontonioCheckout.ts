@@ -18,11 +18,12 @@ import {
     PaymentFailedError,
     ValidationError,
 } from '../../common';
-import { LoggingService } from '../../services';
+import { LoggingService, MontonioLogger } from '../../services';
 
 export class MontonioCheckout extends BaseComponent {
     public isValid: boolean = false;
 
+    private readonly logger = new MontonioLogger(MontonioCheckout.name);
     private options: CheckoutOptions;
     private readonly environment: EnvironmentOptions;
     private paymentAuth: PaymentAuth | null = null;
@@ -34,7 +35,7 @@ export class MontonioCheckout extends BaseComponent {
 
         LoggingService.instance.initialize(this.environment, this.options.sessionUuid);
 
-        console.log('MONTONIO-JS: MontonioCheckout: class created with options:', options);
+        this.logger.info('Checkout created', options);
 
         validateCheckoutOptions(options);
     }
@@ -45,7 +46,7 @@ export class MontonioCheckout extends BaseComponent {
      */
     public async initialize(mountTo: string | HTMLElement): Promise<boolean> {
         try {
-            console.log('MONTONIO-JS: initialize: Initializing MontonioCheckout with mountTo:', mountTo);
+            this.logger.info(`Mounting checkout to [${mountTo}]`);
             this.mountElement = getElement(mountTo);
 
             const sessionData = await this.fetchSession();
@@ -61,10 +62,10 @@ export class MontonioCheckout extends BaseComponent {
 
             this.loaded = true;
 
-            console.log('MONTONIO-JS: initialize: MontonioCheckout initialized successfully');
+            this.logger.info(`Successfully mounted checkout to [${mountTo}]`);
             return true;
         } catch (error) {
-            console.error('MONTONIO-JS: initialize: Error initializing MontonioCheckout:', error);
+            this.logger.error(`Error mounting checkout to [${mountTo}]`, { error });
             this.cleanup();
             throw error;
         }
@@ -75,7 +76,7 @@ export class MontonioCheckout extends BaseComponent {
      * @param options - Updatable options
      */
     public updateOptions(options: UpdatableCheckoutOptions): void {
-        console.log('MONTONIO-JS: updateOptions: Updating options to:', options);
+        this.logger.info('Updating checkout options', options);
         if (!this.loaded) {
             throw new MontonioCheckoutNotInitializedError();
         }
@@ -97,7 +98,6 @@ export class MontonioCheckout extends BaseComponent {
      * Check the validity of the payment form. Throws an error if the payment form is invalid.
      */
     public validateOrReject(): void {
-        console.log('MONTONIO-JS: validateOrReject: Called validateOrReject, isValid:', this.isValid);
         if (this.isValid) {
             return;
         }
@@ -135,7 +135,7 @@ export class MontonioCheckout extends BaseComponent {
             this.options.locale ? `?preferredLocale=${this.options.locale}` : ''
         }`;
 
-        console.log('MONTONIO-JS: fetchSession: Fetching iframe URL from:', url);
+        this.logger.info(`Fetching iframe URL from [${url}]`);
         return await this.httpService.get<GatewayUrlResponse>(url);
     }
 
@@ -143,7 +143,7 @@ export class MontonioCheckout extends BaseComponent {
      * Set up global listeners for payment completion, failure, payment auth, and validation.
      */
     private setUpListeners(): void {
-        console.log('MONTONIO-JS: setUpListeners: Setting up listeners');
+        this.logger.info('setUpListeners: Setting up listeners');
         this.setUpFormChangeListener();
         this.setUpPaymentCompletedListener();
         this.setUpPaymentFailedListener();
@@ -196,7 +196,7 @@ export class MontonioCheckout extends BaseComponent {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
             async (completedMessage) => {
-                console.log('MONTONIO-JS: CHECKOUT_PAYMENT_COMPLETED (from main iframe)', completedMessage);
+                this.logger.info('Checkout payment completed', completedMessage);
 
                 this.cleanupPaymentAuth();
 
@@ -218,7 +218,7 @@ export class MontonioCheckout extends BaseComponent {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
             (failedMessage) => {
-                console.error('MONTONIO-JS: CHECKOUT_PAYMENT_FAILED (from main iframe)', failedMessage);
+                this.logger.warn('Checkout payment failed', failedMessage);
 
                 this.cleanupPaymentAuth();
 
@@ -242,7 +242,7 @@ export class MontonioCheckout extends BaseComponent {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT,
             (res) => {
-                console.log('MONTONIO-JS: CHECKOUT_VALIDATE_FIELDS_RESULT', res);
+                this.logger.info('Checkout validate fields result', res);
                 if (!res.payload.isValid) {
                     this.handlePaymentError(new ValidationError());
                 }
@@ -259,7 +259,7 @@ export class MontonioCheckout extends BaseComponent {
             MessageTypeEnum.CHECKOUT_START_PAYMENT_AUTH,
             async (message) => {
                 try {
-                    console.log('MONTONIO-JS: PAYMENT_AUTH_STARTED', message);
+                    this.logger.info('Payment auth started', message);
 
                     this.paymentAuth = new PaymentAuth({
                         paymentAuthData: message.payload.paymentAuthData,
@@ -301,7 +301,7 @@ export class MontonioCheckout extends BaseComponent {
 
         while (attempts < MAX_ATTEMPTS) {
             try {
-                console.log('MONTONIO-JS: getPaymentResult: Fetching return URL from:', url);
+                this.logger.info(`Fetching return URL from [${url}]`);
                 const result = await this.httpService.get<ReturnUrlResponse>(url);
                 attempts++;
                 if (result?.merchantReturnUrl) {
@@ -312,7 +312,7 @@ export class MontonioCheckout extends BaseComponent {
                     };
                 }
             } catch (error) {
-                console.error('MONTONIO-JS: getPaymentResult: Error fetching return URL:', error);
+                this.logger.error(`Error fetching return URL from [${url}]`, { error });
             }
 
             // Wait for 1 second before the next attempt
@@ -350,7 +350,7 @@ export class MontonioCheckout extends BaseComponent {
      */
     private handlePaymentSuccess(result: PaymentResult): void {
         this.options.onSuccess(result);
-        console.log('MONTONIO-JS: handlePaymentSuccess: onSuccess callback called with result:', result);
+        this.logger.info('Triggered onSuccess callback', result);
     }
 
     /**
@@ -358,7 +358,7 @@ export class MontonioCheckout extends BaseComponent {
      */
     private handlePaymentError(error: Error): void {
         this.options.onError(error);
-        console.error('MONTONIO-JS: handlePaymentError: onError callback called with error:', error);
+        this.logger.warn('Triggered onError callback', { error });
     }
 
     /**
@@ -367,7 +367,7 @@ export class MontonioCheckout extends BaseComponent {
     private handleActionRequired(payload: ActionRequiredPayload): void {
         if (this.options.onActionRequired) {
             this.options.onActionRequired(payload);
-            console.log('MONTONIO-JS: handleActionRequired: onActionRequired callback called with payload:', payload);
+            this.logger.info('Triggered onActionRequired callback', payload);
         }
     }
 }
