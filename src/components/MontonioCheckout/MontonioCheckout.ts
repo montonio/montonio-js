@@ -350,7 +350,7 @@ export class MontonioCheckout extends BaseComponent {
      */
     private handlePaymentSuccess(result: PaymentResult): void {
         this.options.onSuccess(result);
-        this.logger.info('Triggered onSuccess callback', result);
+        this.logger.info('Triggered onuccess callback', result);
     }
 
     /**
