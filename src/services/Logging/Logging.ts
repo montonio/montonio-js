@@ -9,20 +9,20 @@ import { ConfigService } from '../Config/Config';
  * Usage: private readonly logger = new MontonioLogger(MontonioCheckout.name);
  */
 export class MontonioLogger {
-    constructor(private readonly context?: string) {}
+    constructor(private readonly context: string) {}
 
     info(message: string, data?: object): void {
-        console.log(`${message}`, data);
+        console.log(message, data);
         datadogLogs.logger.info(message, { context: this.context, ...data });
     }
 
     warn(message: string, data?: object): void {
-        console.warn(`${message}`, data);
+        console.warn(message, data);
         datadogLogs.logger.warn(message, { context: this.context, ...data });
     }
 
     error(message: string, data?: object): void {
-        console.error(`${message}`, data);
+        console.error(message, data);
         datadogLogs.logger.error(message, { context: this.context, ...data });
     }
 }
@@ -35,7 +35,7 @@ export class LoggingService {
     private static _instance: LoggingService;
     private initialized = false;
     private readonly configService: ConfigService;
-    private readonly logger = new MontonioLogger(LoggingService.name);
+    private readonly logger = new MontonioLogger(this.constructor.name);
 
     private constructor() {
         this.configService = ConfigService.instance;

@@ -13,7 +13,7 @@ export class MessagingService {
      * For example, the "payment complete" message can be listened to from both the MontonioCheckout
      * component and the PaymentAuth (3DS) component - handled by the same callback.
      */
-    private readonly logger = new MontonioLogger(MessagingService.name);
+    private readonly logger = new MontonioLogger(this.constructor.name);
     private subscriptions: Map<MessageTypeEnum, MessageSubscription> = new Map();
 
     public constructor() {

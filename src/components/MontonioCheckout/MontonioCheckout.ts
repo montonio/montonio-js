@@ -23,7 +23,7 @@ import { LoggingService, MontonioLogger } from '../../services';
 export class MontonioCheckout extends BaseComponent {
     public isValid: boolean = false;
 
-    private readonly logger = new MontonioLogger(MontonioCheckout.name);
+    private readonly logger = new MontonioLogger(this.constructor.name);
     private options: CheckoutOptions;
     private readonly environment: EnvironmentOptions;
     private paymentAuth: PaymentAuth | null = null;
