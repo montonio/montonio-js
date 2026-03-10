@@ -6,24 +6,24 @@ import { ConfigService } from '../Config/Config';
  * Thin logger wrapper that writes to both console and Datadog explicitly.
  * Datadog does NOT forward console logs — only calls through this logger reach Datadog.
  *
- * Usage: private readonly logger = new MontonioLogger(this.constructor.name);
+ * Usage: private readonly logger = new MontonioLogger('ClassName');
  */
 export class MontonioLogger {
-    private readonly logPrefix = 'MONTONIO-JS: ';
+    private readonly logPrefix = 'MONTONIO-JS';
     constructor(private readonly context: string) {}
 
     info(message: string, data?: object): void {
-        console.log(`${this.logPrefix}${message}`, ...(data ? [data] : []));
+        console.log(`${this.logPrefix}, ${this.context}: ${message}`, ...(data ? [data] : []));
         datadogLogs.logger.info(message, { context: this.context, ...data });
     }
 
     warn(message: string, data?: object): void {
-        console.warn(`${this.logPrefix}${message}`, ...(data ? [data] : []));
+        console.warn(`${this.logPrefix}, ${this.context}: ${message}`, ...(data ? [data] : []));
         datadogLogs.logger.warn(message, { context: this.context, ...data });
     }
 
     error(message: string, data?: object): void {
-        console.error(`${this.logPrefix}${message}`, ...(data ? [data] : []));
+        console.error(`${this.logPrefix}, ${this.context}: ${message}`, ...(data ? [data] : []));
         datadogLogs.logger.error(message, { context: this.context, ...data });
     }
 }
@@ -36,7 +36,7 @@ export class LoggingService {
     private static _instance: LoggingService;
     private initialized = false;
     private readonly configService: ConfigService;
-    private readonly logger = new MontonioLogger(this.constructor.name);
+    private readonly logger = new MontonioLogger('LoggingService');
 
     private constructor() {
         this.configService = ConfigService.instance;
