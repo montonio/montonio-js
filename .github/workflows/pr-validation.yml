@@ -6,6 +6,12 @@ on:
       - prelive
       - live
 
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+  actions: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest

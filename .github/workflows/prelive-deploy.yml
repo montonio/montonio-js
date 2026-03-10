@@ -5,6 +5,12 @@ on:
     branches:
       - prelive
 
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+  actions: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
