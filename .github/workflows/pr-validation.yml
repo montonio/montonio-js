@@ -6,6 +6,10 @@ on:
       - prelive
       - live
 
+permissions:
+  id-token: write # Required for OIDC
+  contents: read # Required for checkout
+
 jobs:
   validate:
     runs-on: ubuntu-latest
