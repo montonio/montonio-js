@@ -5,6 +5,12 @@ on:
     branches:
       - "**"
 
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+  actions: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
