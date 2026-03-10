@@ -13,17 +13,17 @@ export class MontonioLogger {
     constructor(private readonly context: string) {}
 
     info(message: string, data?: object): void {
-        console.log(`${this.logPrefix}${message}`, data);
+        console.log(`${this.logPrefix}${message}`, ...(data ? [data] : []));
         datadogLogs.logger.info(message, { context: this.context, ...data });
     }
 
     warn(message: string, data?: object): void {
-        console.warn(`${this.logPrefix}${message}`, data);
+        console.warn(`${this.logPrefix}${message}`, ...(data ? [data] : []));
         datadogLogs.logger.warn(message, { context: this.context, ...data });
     }
 
     error(message: string, data?: object): void {
-        console.error(`${this.logPrefix}${message}`, data);
+        console.error(`${this.logPrefix}${message}`, ...(data ? [data] : []));
         datadogLogs.logger.error(message, { context: this.context, ...data });
     }
 }
