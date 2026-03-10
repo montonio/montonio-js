@@ -81,6 +81,7 @@ export class LoggingService {
             datadogLogs.setGlobalContext({
                 sessionUuid: sessionUuid,
             });
+            this.logger.info(`Set sessionUuid to [${sessionUuid}]`, { sessionUuid });
             this.initialized = true;
         } catch (error) {
             // datadogLogs is not yet available, fall back to console
