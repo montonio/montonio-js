@@ -1,5 +1,6 @@
 import { MessageByType, Messages, MessageSubscription, MessageTypeEnum } from './types';
 import { Iframe } from '../../components';
+import { MontonioLogger } from '../Logging/Logging';
 
 /**
  * Service for sending and receiving messages between iframes.
@@ -12,6 +13,7 @@ export class MessagingService {
      * For example, the "payment complete" message can be listened to from both the MontonioCheckout
      * component and the PaymentAuth (3DS) component - handled by the same callback.
      */
+    private readonly logger = new MontonioLogger('MessagingService');
     private subscriptions: Map<MessageTypeEnum, MessageSubscription> = new Map();
 
     public constructor() {
@@ -159,10 +161,7 @@ export class MessagingService {
                         try {
                             return source.getContentWindow() === event.source;
                         } catch (error) {
-                            console.error(
-                                'MONTONIO-JS: MessagingService: Failed to resolve contentWindow for source:',
-                                error,
-                            );
+                            this.logger.error('Failed to resolve contentWindow for source', { error });
                             return false;
                         }
                     });
@@ -174,11 +173,11 @@ export class MessagingService {
                     try {
                         subscription.handler(message);
                     } catch (error) {
-                        console.error('Error in message handler:', error);
+                        this.logger.error('Error in message handler', { error });
                     }
                 });
             } catch (error) {
-                console.error('Error processing iframe message:', error);
+                this.logger.error('Error processing iframe message', { error });
             }
         });
     }
