@@ -9,20 +9,21 @@ import { ConfigService } from '../Config/Config';
  * Usage: private readonly logger = new MontonioLogger(this.constructor.name);
  */
 export class MontonioLogger {
+    private readonly logPrefix = 'MONTONIO-JS: ';
     constructor(private readonly context: string) {}
 
     info(message: string, data?: object): void {
-        console.log(message, data);
+        console.log(`${this.logPrefix}${message}`, data);
         datadogLogs.logger.info(message, { context: this.context, ...data });
     }
 
     warn(message: string, data?: object): void {
-        console.warn(message, data);
+        console.warn(`${this.logPrefix}${message}`, data);
         datadogLogs.logger.warn(message, { context: this.context, ...data });
     }
 
     error(message: string, data?: object): void {
-        console.error(message, data);
+        console.error(`${this.logPrefix}${message}`, data);
         datadogLogs.logger.error(message, { context: this.context, ...data });
     }
 }

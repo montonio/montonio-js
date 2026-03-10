@@ -161,10 +161,7 @@ export class MessagingService {
                         try {
                             return source.getContentWindow() === event.source;
                         } catch (error) {
-                            console.error(
-                                'MONTONIO-JS: MessagingService: Failed to resolve contentWindow for source:',
-                                error,
-                            );
+                            this.logger.error('Failed to resolve contentWindow for source', { error });
                             return false;
                         }
                     });
