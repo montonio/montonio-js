@@ -161,7 +161,7 @@ export class MessagingService {
                         try {
                             return source.getContentWindow() === event.source;
                         } catch (error) {
-                            this.logger.error('Failed to resolve contentWindow for source', error, { event });
+                            this.logger.error('Failed to resolve contentWindow object for Iframe', error, { event });
                             return false;
                         }
                     });
