@@ -126,6 +126,26 @@ export class MontonioCheckout extends BaseComponent {
     }
 
     /**
+     * Tear down the checkout instance — unmounts the iframe, clears all
+     * message subscriptions, and resets state. The instance can be reused
+     * by calling initialize() again.
+     *
+     * Safe to call before initialize() has run, and safe to call multiple times.
+     *
+     * Note: calling destroy() while initialize() is still awaiting will produce
+     * an uncaught console error when the internal timeout fires. Always await
+     * initialize() (or catch its rejection) before calling destroy().
+     */
+    public destroy(): void {
+        this.loaded = false;
+        this.isValid = false;
+        this.cleanupPaymentAuth();
+        this.messagingService.clearAllSubscriptions();
+        this.cleanup();
+        this.logger.info('Checkout instance destroyed');
+    }
+
+    /**
      * Fetch the session data from the Stargate to get the gateway URL for the inner iframe
      */
     private async fetchSession(): Promise<GatewayUrlResponse> {
@@ -329,17 +349,16 @@ export class MontonioCheckout extends BaseComponent {
      */
     private cleanupPaymentAuth(): void {
         if (this.paymentAuth) {
-            // Remove the PaymentAuth iframe from the payment completion/failure subscriptions
-            this.messagingService.removeIframeFromSubscription(
-                MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
-                this.paymentAuth.iframe,
-            );
-            this.messagingService.removeIframeFromSubscription(
-                MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
-                this.paymentAuth.iframe,
-            );
-
-            // Clean up and destroy the PaymentAuth component
+            if (this.paymentAuth.loaded) {
+                this.messagingService.removeIframeFromSubscription(
+                    MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
+                    this.paymentAuth.iframe,
+                );
+                this.messagingService.removeIframeFromSubscription(
+                    MessageTypeEnum.CHECKOUT_PAYMENT_FAILED,
+                    this.paymentAuth.iframe,
+                );
+            }
             this.paymentAuth.cleanup();
             this.paymentAuth = null;
         }
