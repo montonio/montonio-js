@@ -65,7 +65,7 @@ export class LoggingService {
                 datadogLogs.setGlobalContextProperty('sessionUuid', sessionUuid);
                 this.logger.info(`Updated sessionUuid to [${sessionUuid}]`, { sessionUuid });
             } catch (error) {
-                this.logger.error(`Error updating sessionUuid to [${sessionUuid}], ${error}`, error);
+                this.logger.error(`Error updating sessionUuid to [${sessionUuid}]`, error);
             }
             return;
         }
