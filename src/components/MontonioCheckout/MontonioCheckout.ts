@@ -65,7 +65,7 @@ export class MontonioCheckout extends BaseComponent {
             this.logger.info(`Successfully mounted checkout to [${mountTo}]`);
             return true;
         } catch (error) {
-            this.logger.error(`Error mounting checkout to [${mountTo}], ${error}`);
+            this.logger.error(`Error mounting checkout to [${mountTo}], ${error}`, error);
             this.cleanup();
             throw error;
         }
@@ -312,7 +312,7 @@ export class MontonioCheckout extends BaseComponent {
                     };
                 }
             } catch (error) {
-                this.logger.error(`Error fetching return URL from [${url}], ${error}`);
+                this.logger.error(`Error fetching return URL from [${url}], ${error}`, error);
             }
 
             // Wait for 1 second before the next attempt

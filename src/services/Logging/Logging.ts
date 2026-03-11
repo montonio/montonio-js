@@ -22,9 +22,13 @@ export class MontonioLogger {
         datadogLogs.logger.warn(message, { context: this.context, ...data });
     }
 
-    error(message: string, data?: object): void {
-        console.error(`${this.logPrefix} - ${this.context}: ${message}`, ...(data ? [data] : []));
-        datadogLogs.logger.error(message, { context: this.context, ...data });
+    error(message: string, error: unknown, data?: object): void {
+        console.error(`${this.logPrefix} - ${this.context}: ${message}`, error);
+        datadogLogs.logger.error(
+            message,
+            { context: this.context, ...data },
+            error instanceof Error ? error : undefined,
+        );
     }
 }
 
@@ -61,7 +65,7 @@ export class LoggingService {
                 datadogLogs.setGlobalContextProperty('sessionUuid', sessionUuid);
                 this.logger.info(`Updated sessionUuid to [${sessionUuid}]`, { sessionUuid });
             } catch (error) {
-                this.logger.error(`Error updating sessionUuid to [${sessionUuid}], ${error}`);
+                this.logger.error(`Error updating sessionUuid to [${sessionUuid}], ${error}`, error);
             }
             return;
         }
