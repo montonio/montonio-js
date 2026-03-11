@@ -35,7 +35,7 @@ export class MontonioCheckout extends BaseComponent {
 
         LoggingService.instance.initialize(this.environment, this.options.sessionUuid);
 
-        this.logger.info('Checkout created', { options });
+        this.logger.info('New checkout instance created', { options });
 
         validateCheckoutOptions(options);
     }
