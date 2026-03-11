@@ -161,7 +161,7 @@ export class MessagingService {
                         try {
                             return source.getContentWindow() === event.source;
                         } catch (error) {
-                            this.logger.error('Failed to resolve contentWindow for source', { error });
+                            this.logger.error(`Failed to resolve contentWindow for source, ${error}`, { event });
                             return false;
                         }
                     });
@@ -173,11 +173,11 @@ export class MessagingService {
                     try {
                         subscription.handler(message);
                     } catch (error) {
-                        this.logger.error('Error in message handler', { error });
+                        this.logger.error(`Error in message handler, ${error}`);
                     }
                 });
             } catch (error) {
-                this.logger.error('Error processing iframe message', { error });
+                this.logger.error(`Error processing iframe message, ${error}`);
             }
         });
     }

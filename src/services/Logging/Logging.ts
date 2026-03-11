@@ -13,17 +13,17 @@ export class MontonioLogger {
     constructor(private readonly context: string) {}
 
     info(message: string, data?: object): void {
-        console.log(`${this.logPrefix}, ${this.context}: ${message}`, ...(data ? [data] : []));
+        console.log(`${this.logPrefix} - ${this.context}: ${message}`, ...(data ? [data] : []));
         datadogLogs.logger.info(message, { context: this.context, ...data });
     }
 
     warn(message: string, data?: object): void {
-        console.warn(`${this.logPrefix}, ${this.context}: ${message}`, ...(data ? [data] : []));
+        console.warn(`${this.logPrefix} - ${this.context}: ${message}`, ...(data ? [data] : []));
         datadogLogs.logger.warn(message, { context: this.context, ...data });
     }
 
     error(message: string, data?: object): void {
-        console.error(`${this.logPrefix}, ${this.context}: ${message}`, ...(data ? [data] : []));
+        console.error(`${this.logPrefix} - ${this.context}: ${message}`, ...(data ? [data] : []));
         datadogLogs.logger.error(message, { context: this.context, ...data });
     }
 }
@@ -61,7 +61,7 @@ export class LoggingService {
                 datadogLogs.setGlobalContextProperty('sessionUuid', sessionUuid);
                 this.logger.info(`Updated sessionUuid to [${sessionUuid}]`, { sessionUuid });
             } catch (error) {
-                this.logger.error(`Error updating sessionUuid to [${sessionUuid}]`, { error });
+                this.logger.error(`Error updating sessionUuid to [${sessionUuid}], ${error}`);
             }
             return;
         }
