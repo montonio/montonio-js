@@ -35,7 +35,7 @@ export class MontonioCheckout extends BaseComponent {
 
         LoggingService.instance.initialize(this.environment, this.options.sessionUuid);
 
-        this.logger.info('Checkout created', options);
+        this.logger.info('New checkout instance created', { options });
 
         validateCheckoutOptions(options);
     }
@@ -65,7 +65,7 @@ export class MontonioCheckout extends BaseComponent {
             this.logger.info(`Successfully mounted checkout to [${mountTo}]`);
             return true;
         } catch (error) {
-            this.logger.error(`Error mounting checkout to [${mountTo}]`, { error });
+            this.logger.error(`Error mounting checkout to [${mountTo}]`, error);
             this.cleanup();
             throw error;
         }
@@ -76,7 +76,7 @@ export class MontonioCheckout extends BaseComponent {
      * @param options - Updatable options
      */
     public updateOptions(options: UpdatableCheckoutOptions): void {
-        this.logger.info('Updating checkout options', options);
+        this.logger.info('Updating checkout options', { options });
         if (!this.loaded) {
             throw new MontonioCheckoutNotInitializedError();
         }
@@ -196,7 +196,7 @@ export class MontonioCheckout extends BaseComponent {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
             async (completedMessage) => {
-                this.logger.info('Checkout payment completed', completedMessage);
+                this.logger.info('Checkout payment completed', { event: completedMessage });
 
                 this.cleanupPaymentAuth();
 
@@ -242,7 +242,7 @@ export class MontonioCheckout extends BaseComponent {
         this.messagingService.subscribe(
             MessageTypeEnum.CHECKOUT_VALIDATE_FIELDS_RESULT,
             (res) => {
-                this.logger.info('Checkout validate fields result', res);
+                this.logger.info('Checkout validate fields result', { event: res });
                 if (!res.payload.isValid) {
                     this.handlePaymentError(new ValidationError());
                 }
@@ -259,7 +259,7 @@ export class MontonioCheckout extends BaseComponent {
             MessageTypeEnum.CHECKOUT_START_PAYMENT_AUTH,
             async (message) => {
                 try {
-                    this.logger.info('Payment auth started', message);
+                    this.logger.info('Payment auth started', { event: message });
 
                     this.paymentAuth = new PaymentAuth({
                         paymentAuthData: message.payload.paymentAuthData,
@@ -312,7 +312,7 @@ export class MontonioCheckout extends BaseComponent {
                     };
                 }
             } catch (error) {
-                this.logger.error(`Error fetching return URL from [${url}]`, { error });
+                this.logger.error(`Error fetching return URL from [${url}]`, error);
             }
 
             // Wait for 1 second before the next attempt
@@ -350,7 +350,7 @@ export class MontonioCheckout extends BaseComponent {
      */
     private handlePaymentSuccess(result: PaymentResult): void {
         this.options.onSuccess(result);
-        this.logger.info('Triggered onSuccess callback', result);
+        this.logger.info('Triggered onSuccess callback', { params: result });
     }
 
     /**
@@ -358,7 +358,7 @@ export class MontonioCheckout extends BaseComponent {
      */
     private handlePaymentError(error: Error): void {
         this.options.onError(error);
-        this.logger.warn('Triggered onError callback', { error });
+        this.logger.info('Triggered onError callback', { error });
     }
 
     /**
@@ -367,7 +367,7 @@ export class MontonioCheckout extends BaseComponent {
     private handleActionRequired(payload: ActionRequiredPayload): void {
         if (this.options.onActionRequired) {
             this.options.onActionRequired(payload);
-            this.logger.info('Triggered onActionRequired callback', payload);
+            this.logger.info('Triggered onActionRequired callback', { params: payload });
         }
     }
 }

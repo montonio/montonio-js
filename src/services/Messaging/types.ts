@@ -1,5 +1,5 @@
 import { ActionRequiredActionEnum, LocaleEnum } from '../../components/MontonioCheckout/types';
-import type { Iframe } from '../../components/Iframe/Iframe';
+import type { Iframe } from '../../components';
 
 export interface MessageSubscription {
     handler: (message: Messages) => void;
