@@ -30,9 +30,9 @@ export abstract class BaseComponent {
     }
 
     public cleanup(): void {
-        if (this.iframe) {
-            this.iframe.unmount();
-            this.iframe = null;
+        if (this._iframe !== null) {
+            this._iframe.unmount();
+            this._iframe = null;
         }
     }
 
