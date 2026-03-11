@@ -349,6 +349,9 @@ export class MontonioCheckout extends BaseComponent {
      */
     private cleanupPaymentAuth(): void {
         if (this.paymentAuth) {
+            // Only remove iframe subscriptions if PaymentAuth was fully initialized.
+            // Redirect-type flows return early without setting an iframe (loaded stays false),
+            // so no iframe was ever added to the subscriptions.
             if (this.paymentAuth.loaded) {
                 this.messagingService.removeIframeFromSubscription(
                     MessageTypeEnum.CHECKOUT_PAYMENT_COMPLETED,
