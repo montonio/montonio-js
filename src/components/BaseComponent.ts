@@ -29,7 +29,7 @@ export abstract class BaseComponent {
         this._iframe = value;
     }
 
-    public cleanup(): void {
+    public destroy(): void {
         if (this._iframe) {
             this._iframe.unmount();
             this._iframe = null;

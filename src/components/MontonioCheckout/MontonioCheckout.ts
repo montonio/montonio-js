@@ -66,7 +66,7 @@ export class MontonioCheckout extends BaseComponent {
             return true;
         } catch (error) {
             this.logger.error(`Error mounting checkout to [${mountTo}]`, error);
-            this.cleanup();
+            this.destroy();
             throw error;
         }
     }
@@ -339,8 +339,7 @@ export class MontonioCheckout extends BaseComponent {
                 this.paymentAuth.iframe,
             );
 
-            // Clean up and destroy the PaymentAuth component
-            this.paymentAuth.cleanup();
+            this.paymentAuth.destroy();
             this.paymentAuth = null;
         }
     }
