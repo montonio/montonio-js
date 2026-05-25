@@ -15,9 +15,21 @@ export class MessagingService {
      */
     private readonly logger = new MontonioLogger('MessagingService');
     private subscriptions: Map<MessageTypeEnum, MessageSubscription> = new Map();
+    private readonly messageHandler: (event: MessageEvent) => void;
 
     public constructor() {
-        this.setupMessageListener();
+        this.messageHandler = (event) => this.handleWindowMessage(event);
+        window.addEventListener('message', this.messageHandler);
+    }
+
+    /**
+     * Tear down this MessagingService: clear all subscriptions and remove
+     * the global window message listener. Call this when the owning component
+     * is being disposed to avoid leaking listeners across the page lifetime.
+     */
+    public destroy(): void {
+        this.clearAllSubscriptions();
+        window.removeEventListener('message', this.messageHandler);
     }
 
     /**
@@ -100,24 +112,6 @@ export class MessagingService {
     }
 
     /**
-     * Clear all subscriptions
-     */
-    public clearAllSubscriptions(): void {
-        this.subscriptions.clear();
-    }
-
-    /**
-     * Clear all subscriptions except the ones in the except array
-     */
-    public clearSubscriptionsExcept(except: MessageTypeEnum[]): void {
-        for (const key of [...this.subscriptions.keys()]) {
-            if (!except.includes(key)) {
-                this.subscriptions.delete(key);
-            }
-        }
-    }
-
-    /**
      * Remove an iframe from a subscription's sources
      */
     public removeIframeFromSubscription(messageType: MessageTypeEnum, iframe: Iframe): void {
@@ -135,50 +129,56 @@ export class MessagingService {
     }
 
     /**
-     * Set up the message listener for capturing all window messages
+     * Clear all subscriptions
      */
-    private setupMessageListener(): void {
-        window.addEventListener('message', (event) => {
-            try {
-                // Validate that the message is properly formatted to filter out noise
-                if (!event.data || typeof event.data !== 'object' || !event.data.name) {
+    private clearAllSubscriptions(): void {
+        this.subscriptions.clear();
+    }
+
+    /**
+     * Handle a window 'message' event: route it to any matching subscription
+     * whose source iframe sent it.
+     */
+    private handleWindowMessage(event: MessageEvent): void {
+        try {
+            // Validate that the message is properly formatted to filter out noise
+            if (!event.data || typeof event.data !== 'object' || !event.data.name) {
+                return;
+            }
+
+            const message = event.data;
+
+            // Find the matching subscriptions and call their handler
+            this.subscriptions.forEach((subscription, key) => {
+                // Check if message type matches
+                if (key !== message.name) {
                     return;
                 }
 
-                const message = event.data;
-
-                // Find the matching subscriptions and call their handler
-                this.subscriptions.forEach((subscription, key) => {
-                    // Check if message type matches
-                    if (key !== message.name) {
-                        return;
-                    }
-
-                    // Check if the event source matches any of the specified sources.
-                    // contentWindow is resolved lazily here — the iframe must be loaded
-                    // to have sent a message, so getContentWindow() is safe at this point.
-                    const sourceMatches = subscription.sources.some((source) => {
-                        try {
-                            return source.getContentWindow() === event.source;
-                        } catch (error) {
-                            this.logger.error('Failed to resolve contentWindow object for Iframe', error, { event });
-                            return false;
-                        }
-                    });
-                    if (!sourceMatches) {
-                        return;
-                    }
-
-                    // Call the handler
+                // Check if the event source matches any of the specified sources.
+                // contentWindow is resolved lazily here — the iframe must be loaded
+                // to have sent a message, so getContentWindow() is safe at this point.
+                const sourceMatches = subscription.sources.some((source) => {
                     try {
-                        subscription.handler(message);
+                        return source.getContentWindow() === event.source;
                     } catch (error) {
-                        this.logger.error('Error in message handler', error);
+                        this.logger.error('Failed to resolve contentWindow object for Iframe', error, { event });
+                        return false;
                     }
                 });
-            } catch (error) {
-                this.logger.error('Error processing iframe message', error);
-            }
-        });
+                if (!sourceMatches) {
+                    return;
+                }
+
+                // Call the handler
+                try {
+                    subscription.handler(message);
+                } catch (error) {
+                    this.logger.error('Error in message handler', error);
+                }
+            });
+        } catch (error) {
+            this.logger.error('Error processing iframe message', error);
+        }
     }
 }
