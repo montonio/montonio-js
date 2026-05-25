@@ -29,11 +29,13 @@ export abstract class BaseComponent {
         this._iframe = value;
     }
 
-    public cleanup(): void {
-        if (this.iframe) {
-            this.iframe.unmount();
-            this.iframe = null;
+    public destroy(): void {
+        if (this._iframe) {
+            this._iframe.unmount();
+            this._iframe = null;
         }
+        this.messagingService.destroy();
+        this.loaded = false;
     }
 
     public abstract initialize(...args: unknown[]): Promise<unknown>;

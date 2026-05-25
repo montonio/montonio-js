@@ -66,22 +66,22 @@ export class PaymentAuth extends BaseComponent {
 
             this.loaded = true;
         } catch (error) {
-            this.cleanup();
+            this.destroy();
             throw error;
         }
     }
 
     /**
-     * Clean up the payment auth component and restore body overflow
+     * Destroy the payment auth component and restore body overflow
      */
-    public cleanup(): void {
+    public destroy(): void {
         if (this.loaded) {
             // Restore the original body overflow
             restoreBodyOverflow(this.originalBodyOverflow);
         }
 
-        // Call parent method to handle iframe cleanup
-        super.cleanup();
+        // Call parent method to tear down the iframe and MessagingService
+        super.destroy();
     }
 
     /**
