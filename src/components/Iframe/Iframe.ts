@@ -34,11 +34,10 @@ export class Iframe {
     }
 
     public unmount(): void {
-        // This only clears the resize subscription because that's the only subscription
-        // on the MessagingService created in this Iframe instance
-        if (this.element.contentWindow) {
-            this.messagingService.clearAllSubscriptions();
-        }
+        // Tear down the internal MessagingService (used for the height-change
+        // subscription) so its window 'message' listener is removed, not just
+        // its subscriptions cleared.
+        this.messagingService.destroy();
 
         if (this.element.parentNode) {
             this.element.parentNode.removeChild(this.element);
