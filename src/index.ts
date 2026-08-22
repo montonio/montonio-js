@@ -1,8 +1,9 @@
-import { ErrorEnum } from './common';
+import { ErrorEnum, PaymentFailedError } from './common';
 import { MontonioCheckout } from './components';
 import type { ActionRequiredPayload, CheckoutOptions } from './components/MontonioCheckout/types';
 import { ActionRequiredActionEnum, LocaleEnum } from './components/MontonioCheckout/types';
 import { Environment } from './services/Config/types';
+import type { PaymentFailedMessageData } from './services/Messaging';
 import { MessageTypeEnum, DeclineCategoryEnum } from './services/Messaging';
 
 export {
@@ -13,6 +14,8 @@ export {
     Environment,
     MessageTypeEnum,
     DeclineCategoryEnum,
+    PaymentFailedError,
+    PaymentFailedMessageData,
     LocaleEnum,
     ErrorEnum,
 };
