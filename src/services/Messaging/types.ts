@@ -123,10 +123,6 @@ export interface PaymentAuthMessageData {
     originalPaymentMethodData?: unknown;
 }
 
-/**
- * Coarse category for a failed card payment. Matches the message shown to the shopper —
- * exposes no more detail than the shopper already sees.
- */
 export enum DeclineCategoryEnum {
     CARD_NOT_USABLE = 'card_not_usable',
     INSUFFICIENT_FUNDS = 'insufficient_funds',
@@ -134,7 +130,6 @@ export enum DeclineCategoryEnum {
     BANK_DECLINED = 'bank_declined',
     CARD_DETAILS_INVALID = 'card_details_invalid',
     TEMPORARY_PROBLEM = 'temporary_problem',
-    /** Fallback when the refusal could not be classified further. */
     OTHER = 'other',
 }
 
