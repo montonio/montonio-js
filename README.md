@@ -123,7 +123,7 @@ The `MontonioCheckout.submitPayment()` method will initiate the payment submissi
 When the payment completes (successfully or with an error), the appropriate callback you defined during initialization will be invoked:
 
 - **`onSuccess(result)`**: Called when payment is successful. The result contains `paymentStatus`, `orderToken`, and `returnUrl` fields.
-- **`onError(error)`**: Called when payment fails or validation errors occur.
+- **`onError(error)`**: Called when payment fails or validation errors occur. On `PAYMENT_FAILED` errors, `error.paymentFailedMessageData.declineCategory` may carry one of the seven `DeclineCategoryEnum` values.
 - **`onActionRequired(payload)`** (Optional): Called when additional user action is required (e.g. authentication such as 3DS or OTP). Use it to lock the pay button or show an overlay. The `payload` has `action` (e.g. `'scrollIntoView'`); when it is `'scrollIntoView'`, scroll or focus the payment area so the user can complete authentication there.
 
 The `returnUrl` is the URL you provided in the backend request to create the order. As per the API documentation, this URL will contain the `order-token` query parameter, which you can use to validate the payment. In most cases, you should redirect the user to the `returnUrl` in your `onSuccess` callback and handle the token validation on that page.

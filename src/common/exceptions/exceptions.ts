@@ -31,7 +31,9 @@ export class PaymentFailedError extends Error {
     displayedInPaymentComponent: boolean = true;
 
     constructor(paymentFailedMessageData: PaymentFailedMessageData) {
-        super(`Payment failed: ${paymentFailedMessageData.errorCode}`);
+        const original = paymentFailedMessageData.originalPaymentMethodResult as { message?: unknown } | undefined;
+        const detail = typeof original?.message === 'string' ? ` — ${original.message}` : '';
+        super(`Payment failed: ${paymentFailedMessageData.errorCode}${detail}`);
         this.name = ErrorEnum.PAYMENT_FAILED;
         this.paymentFailedMessageData = paymentFailedMessageData;
     }
