@@ -1,4 +1,4 @@
-export { MessageTypeEnum } from './types';
+export { MessageTypeEnum, DeclineCategoryEnum } from './types';
 export type {
     MessageOptions,
     Messages,

@@ -123,8 +123,19 @@ export interface PaymentAuthMessageData {
     originalPaymentMethodData?: unknown;
 }
 
+export enum DeclineCategoryEnum {
+    CARD_NOT_USABLE = 'card_not_usable',
+    INSUFFICIENT_FUNDS = 'insufficient_funds',
+    VERIFICATION_FAILED = 'verification_failed',
+    BANK_DECLINED = 'bank_declined',
+    CARD_DETAILS_INVALID = 'card_details_invalid',
+    TEMPORARY_PROBLEM = 'temporary_problem',
+    OTHER = 'other',
+}
+
 export interface PaymentFailedMessageData {
     errorCode: string;
+    declineCategory?: DeclineCategoryEnum;
     paymentIntentUuid?: string;
     originalPaymentMethodResult?: unknown;
 }
