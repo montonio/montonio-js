@@ -1,0 +1,133 @@
+name: PR Description Check
+
+# Inline copy of montonio/github-actions/.github/workflows/pr-description-check-reusable.yml
+# (public repos cannot call reusable workflows from private repos). Keep in sync.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: pr-description-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: pr-description / validate
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch PR description
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.body // ""' > "$RUNNER_TEMP/pr-body.md"
+
+      - name: Validate PR description
+        env:
+          PR_BODY_FILE: ${{ runner.temp }}/pr-body.md
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import sys
+
+          with open(os.environ["PR_BODY_FILE"]) as f:
+              body = f.read()
+          body = re.sub(r"<!--.*?-->", "", body.replace("\r\n", "\n"), flags=re.S)
+          lines = body.split("\n")
+          errors = []
+
+          CHECKBOX = re.compile(r"^\s*[-*]\s*\[([ xX])\]\s*(.*?)\s*$")
+
+
+          def find(marker):
+              for i, line in enumerate(lines):
+                  if marker.lower() in line.lower():
+                      return i
+              return None
+
+
+          def section(start_marker, end_marker):
+              start = find(start_marker)
+              if start is None:
+                  return None
+              end = find(end_marker) if end_marker else None
+              if end is None or end <= start:
+                  end = len(lines)
+              return lines[start + 1:end]
+
+
+          def checkboxes(section_lines):
+              return [(m.group(1) != " ", m.group(2)) for m in map(CHECKBOX.match, section_lines or []) if m]
+
+
+          required = [
+              "## Reason, description, and testing instructions for the change",
+              "**Reason and description of the change**",
+              "**Specific testing steps for this PR",
+              "## Rollback procedure",
+              "## Checklist",
+              "**Security impact**",
+              "**Significant change**",
+          ]
+          for marker in required:
+              if find(marker) is None:
+                  errors.append(f"Missing template section: `{marker.strip('*# ')}`")
+
+          reason = section("**Reason and description of the change**", "**Specific testing steps for this PR")
+          if reason is not None:
+              content = [l for l in reason if l.strip() and not re.fullmatch(r"\s*[-*]?\s*", l)]
+              if not content:
+                  errors.append("`Reason and description of the change` is empty")
+
+          checklist = checkboxes(section("## Checklist", "**Security impact**"))
+          for phrase in ("I have performed a self-review", "I have followed Montonio"):
+              item = next((c for c in checklist if phrase.lower() in c[1].lower()), None)
+              if item is None:
+                  errors.append(f"Checklist item missing: `{phrase}...`")
+              elif not item[0]:
+                  errors.append(f"Checklist item not ticked: `{phrase}...`")
+
+
+          def single_choice(name, start, end, options):
+              boxes = [c for c in checkboxes(section(start, end)) if c[1].lower() in options]
+              ticked = [label for checked, label in boxes if checked]
+              if len(ticked) != 1:
+                  errors.append(f"`{name}`: tick exactly one of {', '.join(o.title() for o in options)} (ticked: {len(ticked)})")
+                  return None
+              return ticked[0].lower()
+
+
+          security = single_choice("Security impact", "**Security impact**", "**Significant change**", ("high", "medium", "low"))
+          significant = single_choice("Significant change", "**Significant change**", None, ("yes", "no"))
+
+          blocking = []
+          if security == "high":
+              blocking.append("Security impact is **High**")
+          if significant == "yes":
+              blocking.append("Significant change is **Yes**")
+
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          out = ["## PR description check", ""]
+          if errors:
+              out += ["PR description does not follow the PR template:", ""] + [f"- {e}" for e in errors] + [""]
+          if blocking:
+              out += [f"- {b}" for b in blocking]
+              out += ["", "Such changes cannot be merged through the normal PR flow and require an admin bypass per the Software Development and Release Process.", ""]
+          if not errors and not blocking:
+              out.append("PR description follows the template.")
+          if summary:
+              with open(summary, "a") as f:
+                  f.write("\n".join(out) + "\n")
+
+          for e in errors + blocking:
+              print(f"::error title=PR description::{re.sub(r'[`*]', '', e)}")
+          if errors or blocking:
+              sys.exit(1)
+          print("PR description follows the template.")
+          PY
