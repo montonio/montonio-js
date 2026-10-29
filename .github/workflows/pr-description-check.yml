@@ -4,6 +4,7 @@ name: PR Description Check
 # (public repos cannot call reusable workflows from private repos). Keep in sync.
 on:
   pull_request:
+    branches: [develop]
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
 permissions:
